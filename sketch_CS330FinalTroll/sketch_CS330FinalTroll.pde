@@ -47,6 +47,7 @@ void StartGame()
       size = new PVector(random(1) * 100, random(1) * 100);
     }
   };
+	objects.add(b);
 
 	player = (Player) objects.addGrid(new Player(new PVector(17, 31)));
 	tina = (Tina) objects.addGrid(new Tina(bridge));

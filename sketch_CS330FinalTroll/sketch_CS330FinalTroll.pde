@@ -34,19 +34,26 @@ void settings()
 
 void setup()
 {
-	
+
 }
 
 void StartGame()
 {
 	gameStart = true;
-	
+
+  Button b = new Button(new PVector(10, 10)){
+    public void clicked()
+    {
+      size = new PVector(random(1) * 100, random(1) * 100);
+    }
+  };
+
 	player = (Player) objects.addGrid(new Player(new PVector(17, 31)));
 	tina = (Tina) objects.addGrid(new Tina(bridge));
-	
+
 	if (variation == 1)
 		harry = (Harry) objects.addGrid(new Harry(new PVector(19, 8)));
-	
+
 	if (variation == 2)
 	{
 		objects.addGrid(new Block(new PVector(12, 4)));
@@ -57,7 +64,7 @@ void StartGame()
 		objects.addGrid(new Block(new PVector(12, 9)));
 		objects.addGrid(new Block(new PVector(12, 10)));
 		objects.addGrid(new Block(new PVector(13, 11)));
-		
+
 		objects.addGrid(new Block(new PVector(7, 15)));
 		objects.addGrid(new Block(new PVector(8, 15)));
 		objects.addGrid(new Block(new PVector(9, 15)));
@@ -71,7 +78,7 @@ void StartGame()
 		objects.addGrid(new Block(new PVector(16, 18)));
 		objects.addGrid(new Block(new PVector(17, 19)));
 		objects.addGrid(new Block(new PVector(17, 20)));
-		
+
 		objects.addGrid(new Block(new PVector(17, 10)));
 		objects.addGrid(new Block(new PVector(18, 11)));
 		objects.addGrid(new Block(new PVector(19, 12)));
@@ -84,28 +91,28 @@ void draw()
 {
 	objects.KeysDown(keys);
 	objects.draw();
-	
+
 	if (!gameStart)
 	{
 		pushStyle();
-		
+
 		textAlign(CENTER);
-		
+
 		if (mouseY < height / 3)
 			fill(100);
 		else fill(0);
 		text("Variation 1", width / 2, height / 4);
-		
+
 		if (mouseY >= height / 3 && mouseY < height * 2 / 3)
 			fill(100);
 		else fill(0);
 		text("Variation 2", width / 2, height * 2 / 4);
-		
+
 		if (mouseY >= height * 2 / 3)
 			fill(100);
 		else fill(0);
 		text("Variation 3", width / 2, height * 3 / 4);
-		
+
 		popStyle();
 	}
 }
@@ -120,7 +127,7 @@ void mousePressed()
 			variation = 1;
 		if (mouseY >= height * 2 / 3)
 			variation = 2;
-		
+
 		StartGame();
 	}
 }

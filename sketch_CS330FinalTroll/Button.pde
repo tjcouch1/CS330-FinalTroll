@@ -3,29 +3,53 @@
 
 class Button extends Object
 {
-  PVector size;
   color borderColor;
   color fillColor;
   color textColor;
+  String displayText;
 
   Button()
   {
     super();
-    size = new PVector(16, 16);
-    borderColor = color(0);
-    fillColor = color(30);
-    textColor = color(0);
+
+    InitDefault();
   }
 
   Button(PVector pos)
   {
     super(pos);
+
+    InitDefault();
   }
 
-  void clicked()
+  Button(PVector pos, PVector size)
   {
+    super(pos);
 
+    InitDefault();
+
+    this.size = size.copy();
   }
+
+  void InitDefault()
+  {
+    size = new PVector(16, 16);
+    borderColor = color(0);
+    fillColor = color(30);
+    textColor = color(0);
+    displayText = "";
+  }
+
+	void MousePressed()
+	{
+		if (mouseX >= position.x && mouseX < position.x + size.x)
+			if (mouseY >= position.y && mouseY < position.y + size.y)
+				clicked();
+	}
+
+	void clicked()
+	{
+	}
 
   void draw()
   {
@@ -33,6 +57,11 @@ class Button extends Object
 
   void drawGUI()
   {
+		pushMatrix();
+		translate(position.x, position.y);
+		rotate(radians(imageAngle));
+		scale(scaleX, scaleY);
+
     pushStyle();
 
     textAlign(CENTER);
@@ -44,9 +73,12 @@ class Button extends Object
     noFill();
     rect(0, 0, size.x, size.y);
 
+    if (!displayText.equals(""))
     fill(0);
-    text("Variation 1", width / 2, height / 4);
+    text(displayText, size.x / 2, size.y / 2);
 
-    popStyle();
+		popStyle();
+
+		popMatrix();
   }
 }

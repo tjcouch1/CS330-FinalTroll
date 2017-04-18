@@ -44,7 +44,7 @@ void StartGame()
   Button b = new Button(new PVector(10, 10)){
     public void clicked()
     {
-      size = new PVector(random(1) * 100, random(1) * 100);
+      size = new PVector(round(random(1) * 95) + 5, round(random(1) * 95) + 5);
     }
   };
 	objects.add(b);
@@ -131,6 +131,8 @@ void mousePressed()
 
 		StartGame();
 	}
+
+	objects.MousePressed();
 }
 
 void keyPressed()

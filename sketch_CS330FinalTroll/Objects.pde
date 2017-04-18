@@ -10,7 +10,7 @@ class Objects
 		objects.add(o);
 		return o;
 	}
-	
+
 	GridObject addGrid(GridObject o)
 	{
 		add(o);
@@ -20,7 +20,7 @@ class Objects
 	Object remove(int i)
 	{
 		Object o = objects.remove(i);
-		
+
 		return o;
 	}
 
@@ -28,16 +28,16 @@ class Objects
 	{
 		return objects.remove(objects.indexOf(o));
 	}
-	
+
 	PVector removeGrid(GridObject o)
 	{
 		remove(o);
 		return grid.remove(o);
-		
+
 	}
 
 	void step()
-	{ 
+	{
 		for (Object o : objects)
 		{
 			o.step();
@@ -70,15 +70,21 @@ class Objects
 		}
 	}
 
+	void MousePressed()
+	{
+		for (Object o : objects)
+					o.MousePressed();
+	}
+
 	void draw()
 	{
 		step();
-		
+
 		background(#73D84C);
-		
+
 		if (gameStart && debug)
 			grid.draw();
-		
+
 		drawObjects();
 	}
 
@@ -88,7 +94,7 @@ class Objects
 		{
 			o.drawObj();
 		}
-		
+
 		for (Object o : objects)
 		{
 			o.drawGUI();

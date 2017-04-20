@@ -12,6 +12,8 @@ boolean debug = true;
  **/
 int variation = 0;
 
+Menu mainMenu = new Menu();
+
 boolean gameStart = false;
 
 Grid grid = new Grid(29, 38, 16);
@@ -34,20 +36,34 @@ void settings()
 
 void setup()
 {
-
+	mainMenu.add(new Button(new PVector(width / 2, height / 4), "Variation 1"){
+		public void clicked()
+		{
+			StartGame(0);
+			mainMenu.setActive(false);
+		}
+	});
+	mainMenu.add(new Button(new PVector(width / 2, height * 2 / 4), "Variation 2"){
+		public void clicked()
+		{
+			StartGame(1);
+			mainMenu.setActive(false);
+		}
+	});
+	mainMenu.add(new Button(new PVector(width / 2, height * 3 / 4), "Variation 3"){
+		public void clicked()
+		{
+			StartGame(2);
+			mainMenu.setActive(false);
+		}
+	});
 }
 
-void StartGame()
+void StartGame(int var)
 {
-	gameStart = true;
+	variation = var;
 
-  Button b = new Button(new PVector(10, 10)){
-    public void clicked()
-    {
-      size = new PVector(round(random(1) * 95) + 5, round(random(1) * 95) + 5);
-    }
-  };
-	objects.add(b);
+	gameStart = true;
 
 	player = (Player) objects.addGrid(new Player(new PVector(17, 31)));
 	tina = (Tina) objects.addGrid(new Tina(bridge));
@@ -92,46 +108,10 @@ void draw()
 {
 	objects.KeysDown(keys);
 	objects.draw();
-
-	if (!gameStart)
-	{
-		pushStyle();
-
-		textAlign(CENTER);
-
-		if (mouseY < height / 3)
-			fill(100);
-		else fill(0);
-		text("Variation 1", width / 2, height / 4);
-
-		if (mouseY >= height / 3 && mouseY < height * 2 / 3)
-			fill(100);
-		else fill(0);
-		text("Variation 2", width / 2, height * 2 / 4);
-
-		if (mouseY >= height * 2 / 3)
-			fill(100);
-		else fill(0);
-		text("Variation 3", width / 2, height * 3 / 4);
-
-		popStyle();
-	}
 }
 
 void mousePressed()
 {
-	if (!gameStart)
-	{
-		if (mouseY < height / 3)
-			variation = 0;
-		if (mouseY >= height / 3 && mouseY < height * 2 / 3)
-			variation = 1;
-		if (mouseY >= height * 2 / 3)
-			variation = 2;
-
-		StartGame();
-	}
-
 	objects.MousePressed();
 }
 

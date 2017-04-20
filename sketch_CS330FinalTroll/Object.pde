@@ -10,6 +10,9 @@ class Object
 	float scaleY;
 	color c;//color
 
+	boolean visible = true;
+	boolean active = true;
+
 	Object()
 	{
 		position = new PVector(0, 0);
@@ -47,10 +50,17 @@ class Object
 
 	void MousePressed()
 	{
-		if (mouseX >= position.x - size.x / 2 && mouseX < position.x + size.x / 2)
-			if (mouseY >= position.y - size.y / 2 && mouseY < position.y + size.y / 2)
+		if (containsPoint(new PVector(mouseX, mouseY)))
 				clicked();
 	}
+
+  boolean containsPoint(PVector p)
+  {
+		if (p.x >= position.x - size.x / 2 && p.x < position.x + size.x / 2)
+			if (p.y >= position.y - size.y / 2 && p.y < position.y + size.y / 2)
+				return true;
+		return false;
+  }
 
 	void clicked()
 	{
@@ -74,7 +84,6 @@ class Object
 
 	void drawGUI()
 	{
-
 	}
 
 	void draw()

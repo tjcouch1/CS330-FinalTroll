@@ -3,53 +3,45 @@
 
 class Button extends Object
 {
-  color borderColor;
-  color fillColor;
-  color textColor;
-  String displayText;
+  color borderColor = color(0);
+  color fillColor = color(100);
+  color fillColorHi = color(200);
+  color textColor = color(0);
+  color textColorHi = color(40);
+  String displayText = "";
 
   Button()
   {
     super();
-
-    InitDefault();
+    size = new PVector(grid.gridSize * 6, grid.gridSize * 2);
   }
 
   Button(PVector pos)
   {
     super(pos);
+    size = new PVector(grid.gridSize * 6, grid.gridSize * 2);
+  }
 
-    InitDefault();
+  Button(PVector pos, String dText)
+  {
+    super(pos);
+    size = new PVector(grid.gridSize * 6, grid.gridSize * 2);
+    displayText = dText;
   }
 
   Button(PVector pos, PVector size)
   {
-    super(pos);
-
-    InitDefault();
+    this(pos);
 
     this.size = size.copy();
   }
 
-  void InitDefault()
+  Button(PVector pos, PVector size, String dText)
   {
-    size = new PVector(16, 16);
-    borderColor = color(0);
-    fillColor = color(30);
-    textColor = color(0);
-    displayText = "";
+    this(pos, dText);
+
+    this.size = size.copy();
   }
-
-	void MousePressed()
-	{
-		if (mouseX >= position.x && mouseX < position.x + size.x)
-			if (mouseY >= position.y && mouseY < position.y + size.y)
-				clicked();
-	}
-
-	void clicked()
-	{
-	}
 
   void draw()
   {
@@ -66,19 +58,35 @@ class Button extends Object
 
     textAlign(CENTER);
 
-    fill(fillColor);
-    rect(0, 0, size.x, size.y);
+    boolean mouseOver = containsPoint(new PVector(mouseX, mouseY));
 
+    //fill
+    if (mouseOver)
+      fill(fillColorHi);
+    else fill (fillColor);
+    rect(-size.x / 2, -size.y / 2, size.x, size.y);
+
+    //border
     fill(borderColor);
     noFill();
-    rect(0, 0, size.x, size.y);
+    rect(-size.x / 2, -size.y / 2, size.x, size.y);
 
-    if (!displayText.equals(""))
-    fill(0);
-    text(displayText, size.x / 2, size.y / 2);
+    //text
+    if (displayText != null && !displayText.equals(""))
+    {
+      if (mouseOver)
+        fill(textColorHi);
+      else fill(textColor);
+      text(displayText, 0, 0);
+    }
 
 		popStyle();
 
 		popMatrix();
+  }
+
+  void setDisplayText(String t)
+  {
+    displayText = t;
   }
 }

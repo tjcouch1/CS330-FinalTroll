@@ -40,7 +40,8 @@ class Objects
 	{
 		for (Object o : objects)
 		{
-			o.step();
+			if (o.active)
+				o.step();
 		}
 	}
 
@@ -48,7 +49,8 @@ class Objects
 	{
 		for (Object o : objects)
 		{
-			keys.ObjectKeysDown(o);
+			if (o.active)
+				keys.ObjectKeysDown(o);
 		}
 	}
 
@@ -57,7 +59,8 @@ class Objects
 		char k = str(key).toUpperCase().charAt(0);
 		for (Object o : objects)
 		{
-			o.KeyPressed(k);
+			if (o.active)
+				o.KeyPressed(k);
 		}
 	}
 
@@ -66,13 +69,16 @@ class Objects
 		char k = str(key).toUpperCase().charAt(0);
 		for (Object o : objects)
 		{
-			o.KeyReleased(k);
+			if (o.active)
+				o.KeyReleased(k);
 		}
 	}
 
 	void MousePressed()
 	{
-		for (Object o : objects)
+		//must be cloned so StartGame() doesn't add stuff to it while MousePressed is going on
+		for (Object o : (ArrayList<Object>) objects.clone())
+			if (o.active)
 					o.MousePressed();
 	}
 
@@ -92,12 +98,14 @@ class Objects
 	{
 		for (Object o : objects)
 		{
-			o.drawObj();
+			if (o.visible && o.active)
+				o.drawObj();
 		}
 
 		for (Object o : objects)
 		{
-			o.drawGUI();
+			if (o.visible && o.active)
+				o.drawGUI();
 		}
 	}
 }

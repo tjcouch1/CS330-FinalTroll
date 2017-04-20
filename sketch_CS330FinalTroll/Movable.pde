@@ -6,20 +6,21 @@ class Movable extends GridObject
 	Movable()
 	{
 		super();
-		
+
 		InitDefault();
 	}
 
 	Movable(PVector position)
 	{
 		super(position);
-		
+
 		InitDefault();
 	}
 
 	void InitDefault()
 	{
 		c = color(#00d9a3);
+		size = new PVector(round(grid.gridSize * 5 / 8), round(grid.gridSize * 5 / 8));
 	}
 
 	void step()
@@ -51,7 +52,7 @@ class Movable extends GridObject
 		}
 		return false;
 	}
-	
+
 	boolean CanMove(int dir)
 	{
 		return CanMove(dir, 1);
@@ -96,13 +97,13 @@ class Movable extends GridObject
 				move = true;
 			}
 		}
-		
+
 		if (move)
 			grid.updateGridObject(this);
-		
+
 		return move;
 	}
-	
+
 	boolean Move(int dir)
 	{
 		return Move(dir, 1);
@@ -111,6 +112,6 @@ class Movable extends GridObject
 	void draw()
 	{
 		fill(c);
-		ellipse(grid.gridSize / 2, grid.gridSize / 2, round(grid.gridSize * 5 / 8), round(grid.gridSize * 5 / 8));
+		ellipse(grid.gridSize / 2, grid.gridSize / 2, size.x, size.y);
 	}
 }

@@ -66,6 +66,13 @@ class Grid
 		return null;
 	}
 	
+	GridObject removePlace (PVector pos)
+	{
+		GridObject o = gridContents[(int) pos.x][(int) pos.y];
+		gridContents[(int) pos.x][(int) pos.y] = null;
+		return o;
+	}
+	
 	GridObject updateGridObject(GridObject o)
 	{
 		remove(o);
@@ -113,10 +120,3 @@ class Grid
 		}
 	}
 }
-
-
-
-
-
-
-

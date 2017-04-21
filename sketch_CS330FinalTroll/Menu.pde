@@ -11,9 +11,15 @@ class Menu
   {
     
   }
+  
+  public Menu(boolean a)
+  {
+    active = a;
+  }
 
   public Button add(Button b)
   {
+    b.active = active;
     items.add(b);
     objects.add(b);
     return b;

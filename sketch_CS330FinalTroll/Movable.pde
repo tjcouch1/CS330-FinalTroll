@@ -112,6 +112,6 @@ class Movable extends GridObject
 	void draw()
 	{
 		fill(c);
-		ellipse(grid.gridSize / 2, grid.gridSize / 2, size.x, size.y);
+		ellipse(0, 0, size.x, size.y);
 	}
 }

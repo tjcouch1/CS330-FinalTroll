@@ -5,7 +5,7 @@ class Object
 {
 	PVector position;
 	PVector size;
-	float imageAngle;//in degrees
+	float rotation;//in degrees
 	float scaleX;
 	float scaleY;
 	color c;//color
@@ -17,7 +17,7 @@ class Object
 	{
 		position = new PVector(0, 0);
 		size = new PVector(10, 10);
-		imageAngle = 0;
+		rotation = 0;
 		scaleX = 1;
 		scaleY = 1;
 		c = color(0);
@@ -28,6 +28,15 @@ class Object
 		this();
 
 		this.position = pos.copy();
+		c = color(200);
+	}
+
+	Object(PVector pos, PVector size)
+	{
+		this();
+
+		this.position = pos.copy();
+		this.size = size.copy();
 		c = color(200);
 	}
 
@@ -70,7 +79,7 @@ class Object
 	{
 		pushMatrix();
 		translate(position.x, position.y);
-		rotate(radians(imageAngle));
+		rotate(radians(rotation));
 		scale(scaleX, scaleY);
 
 		pushStyle();

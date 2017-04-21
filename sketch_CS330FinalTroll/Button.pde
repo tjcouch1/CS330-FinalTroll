@@ -51,7 +51,7 @@ class Button extends Object
   {
 		pushMatrix();
 		translate(position.x, position.y);
-		rotate(radians(imageAngle));
+		rotate(radians(rotation));
 		scale(scaleX, scaleY);
 
     pushStyle();

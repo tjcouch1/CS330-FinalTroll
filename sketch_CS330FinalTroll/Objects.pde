@@ -1,7 +1,9 @@
 //Objects - handles all the object actions and drawings
 //Timothy Couch
 
-class Objects
+import java.util.Iterator;
+
+class Objects implements Iterable<Object>
 {
 	ArrayList<Object> objects = new ArrayList<Object>();
 
@@ -33,7 +35,42 @@ class Objects
 	{
 		remove(o);
 		return grid.remove(o);
+	}
 
+	int removeAllGrid()
+	{
+		int count = 0;
+		for (int i = 0; i < grid.gridWidth; i++)
+			for (int j = 0; j < grid.gridHeight; j++)
+		{
+				GridObject removed = grid.removePlace(new PVector(i, j));
+				if (removed != null)
+				{
+					remove(removed);
+					count++;
+				}
+		}
+		return count;
+	}
+	
+	Iterator<Object> iterator()
+	{
+		return new Iterator<Object>(){
+			int place = 0;
+			
+			public boolean hasNext()
+			{
+				return place < objects.size();
+			}
+			public Object next()
+			{
+				Object o = objects.get(place);
+				place++;
+				return o;
+			}
+			public void remove()
+			{}
+		};
 	}
 
 	void step()

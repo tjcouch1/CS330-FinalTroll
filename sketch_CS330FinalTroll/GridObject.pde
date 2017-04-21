@@ -13,6 +13,11 @@ class GridObject extends Object
 		super(position);
 	}
 
+	GridObject(PVector position, PVector size)
+	{
+		super(position, size);
+	}
+
   boolean containsPoint(PVector p)
   {
 		if (p.x >= position.x * grid.gridSize + grid.gridSize / 2 - size.x / 2 && p.x < position.x * grid.gridSize + grid.gridSize / 2 + size.x / 2)
@@ -24,8 +29,8 @@ class GridObject extends Object
 	void drawObj()
 	{
 		pushMatrix();
-		translate(position.x * grid.gridSize, position.y * grid.gridSize);
-		rotate(radians(imageAngle));
+		translate(position.x * grid.gridSize + grid.gridSize / 2, position.y * grid.gridSize + grid.gridSize / 2);
+		rotate(radians(rotation));
 		scale(scaleX, scaleY);
 
 		pushStyle();

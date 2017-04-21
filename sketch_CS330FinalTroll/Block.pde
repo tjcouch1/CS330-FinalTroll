@@ -21,12 +21,13 @@ class Block extends GridObject
 	void InitDefault()
 	{
 		c = color(50);
+		size = new PVector(grid.gridSize, grid.gridSize);
 	}
 
-	void draw()
+	/*void draw()
 	{
 		fill(c);
 		noStroke();
 		rect(0, 0, grid.gridSize, grid.gridSize);
-	}
+	}*/
 }

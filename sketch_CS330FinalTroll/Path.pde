@@ -53,6 +53,36 @@ class Path
 		return GridDir.NULL;
 	}
 	
+	int getNextStep()
+	{
+		return path[step];
+	}
+	
+	int getNextMove()
+	{
+		if (path[step] != GridDir.NULL)
+			return path[step];
+		int currStep = step + 1;
+		while (currStep < path.length && currStep != step && path[currStep] == GridDir.NULL)
+		{
+			currStep++;
+			if (getLooping())
+				currStep %= path.length;
+		}
+		return path[currStep];
+	}
+	
+	int reverseStep()
+	{
+		if (getLooping() || step > 0)
+			step--;
+		if (getLooping())
+			if (step < 0)
+				step += path.length;
+		
+		return path[step];
+	}
+	
 	//DEPRECATED
 	int stepLoop()
 	{

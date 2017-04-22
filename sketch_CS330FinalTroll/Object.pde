@@ -74,13 +74,22 @@ class Object
 	void clicked()
 	{
 	}
+	
+	float getAngle(PVector v)
+	{
+		float angle = degrees(PVector.angleBetween(new PVector(1, 0), v));
+		if (v.y < 0)
+			angle *= -1;
+		
+		return angle;
+	}
 
 	void drawObj()
 	{
 		pushMatrix();
 		translate(position.x, position.y);
-		rotate(radians(rotation));
 		scale(scaleX, scaleY);
+		rotate(radians(rotation));
 
 		pushStyle();
 
@@ -93,11 +102,29 @@ class Object
 
 	void drawGUI()
 	{
+		pushMatrix();
+		translate(position.x, position.y);
+		scale(scaleX, scaleY);
+		rotate(radians(rotation));
+		
+		pushStyle();
+		textAlign(CENTER);
+		
+		drawLate();
+
+		popStyle();
+
+		popMatrix();
 	}
 
 	void draw()
 	{
 		fill(c);
 		rect(size.x * -1 / 2, size.y * -1 / 2, size.x, size.y);
+	}
+	
+	void drawLate()
+	{
+		
 	}
 }

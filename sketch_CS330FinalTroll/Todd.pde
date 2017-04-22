@@ -64,13 +64,16 @@ class Todd extends Movable
 	int energy = energyCap;
 	boolean tired = false;
 	
-	int harryDist = 10;
-	
 	int stepTimeCap = 5;
 	int stepTime = stepTimeCap;
 	
 	int pathUpdateTimeCap = 60;
 	int pathUpdateTime = pathUpdateTimeCap;
+	
+	//sensing
+	float sightRange = 7;
+	float sightAngle = 30;
+	boolean seesPlayer = false;
 	
 	Todd()
 	{
@@ -122,13 +125,25 @@ class Todd extends Movable
 	
 	void step()
 	{
+		//sense for player
+		sense();
+		
 		int moveDir = -1;
 		stepTime--;
 		if (stepTime <= 0)
 		{
+			//step on path
 			stepTime = stepTimeCap;
 			moveDir = path.step();
 			moved = Move(moveDir);
+			
+			//keep trying on current path
+			if (variation == 0 && !moved && moveDir != GridDir.NULL)
+				path.reverseStep();
+			
+			//rotate with path
+			if (path.getNextMove() != GridDir.NULL)
+				rotation = getAngle(GridDir.Move(path.getNextMove()));
 		}
 		
 		if (tired)
@@ -140,70 +155,87 @@ class Todd extends Movable
 		healing = false;
 		resting = false;
 		
-		if (!tired)
+		if (variation != 0)
 		{
-			if (!moved)
+			if (!tired)
 			{
-				if ((position.x != dest.x || position.y != dest.y) && moveDir != GridDir.NULL)// && finished)
-					path = MakePath();
-				energy--;
-				if (new PVector(player.position.x - position.x, player.position.y - position.y).mag() < 4)
+				if (!moved)
 				{
-					energy -= 3;
-					fighting = true;
+					if ((position.x != dest.x || position.y != dest.y) && moveDir != GridDir.NULL)// && finished)
+						path = MakePath();
+					energy--;
+					if (new PVector(player.position.x - position.x, player.position.y - position.y).mag() < 4)
+					{
+						energy -= 3;
+						fighting = true;
+					}
+				}
+				
+				if (energy <= 0)
+				{
+					tired = true;
+					dest = calcDestination();
+					path = MakePath();
+				}
+			}
+			else
+			{
+				if (!moved)
+				{
+					if ((position.x != dest.x || position.y != dest.y) && finished)
+						path = MakePath();
+					if (new PVector(dest.x - position.x, dest.y - position.y).mag() <= 1.5)
+					{
+						if (variation != 1)
+						{
+							energy += 3;
+							resting = true;
+						}
+						else
+						{
+							energy += 4;
+							healing = true;
+						}
+					}
+				}
+				else fleeing = true;
+				
+				if (energy >= energyCap)
+				{
+					tired = false;
+					dest = calcDestination();
+					path = MakePath();
 				}
 			}
 			
-			if (energy <= 0)
+			pathUpdateTime--;
+			if (pathUpdateTime <= 0)
 			{
-				tired = true;
-				dest = calcDestination();
+				if (variation == 1)
+					dest = calcDestination();
+				
 				path = MakePath();
 			}
 		}
-		else
+	}
+	
+	void sense()
+	{
+		//sense the player in visual sight
+		if (position.dist(player.position) <= sightRange)
 		{
-			if (!moved)
-			{
-				if ((position.x != dest.x || position.y != dest.y) && finished)// && (variation != 1 || new PVector(harry.position.x - position.x, harry.position.y - position.y).mag() > harryDist))
-					path = MakePath();
-				if (new PVector(dest.x - position.x, dest.y - position.y).mag() <= 1.5)
-				{
-					if (variation != 1)
-					{
-						energy += 3;
-						resting = true;
-					}
-					else
-					{
-						energy += 4;
-						healing = true;
-					}
-				}
-			}
-			else fleeing = true;
-			
-			if (energy >= energyCap)
-			{
-				tired = false;
-				dest = calcDestination();
-				path = MakePath();
-			}
+			PVector forward = PVector.fromAngle(radians(rotation));
+			float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(player.position, position)));
+			if (playerAngle <= sightAngle)
+				seesPlayer = true;
+			else seesPlayer = false;
 		}
-		
-		pathUpdateTime--;
-		if (pathUpdateTime <= 0 && (variation != 0 || tired))// && (variation != 1 || new PVector(harry.position.x - position.x, harry.position.y - position.y).mag() > harryDist))
-		{
-			if (variation == 1)
-				dest = calcDestination();
-			
-			path = MakePath();
-		}
-}
+		else seesPlayer = false;
+	}
 	
 	Path MakePath()
 	{
-		if (variation == 0 && !tired)
+		if (variation == 0)
 			return new Path(pArray, true);
 		
 		pathUpdateTime = pathUpdateTimeCap;
@@ -214,9 +246,14 @@ class Todd extends Movable
 	void draw()
 	{
 		super.draw();
+		fill(0);
+		line(0, 0, size.x / 2, 0);
 		
 		if (debug)
+		{
+			rotate(-radians(rotation));
 			path.draw();
+		}
 	}
 	
 	/**
@@ -234,6 +271,9 @@ class Todd extends Movable
 			printString = "Resting!";
 		else if (healing)
 			printString = "Healing!";
+		
+		if (seesPlayer)
+			printString = "Sees Player!";
 		
 		fill(0);
 		text(printString, (position.x + 5 / 2) * grid.gridSize - 1, (position.y + 3 / 2) * grid.gridSize - 1);

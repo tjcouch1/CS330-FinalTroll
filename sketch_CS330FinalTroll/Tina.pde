@@ -17,6 +17,7 @@ class Tina extends Movable
 	boolean tired = false;
 	
 	int harryDist = 10;
+	Object harry;
 	
 	int stepTimeCap = 5;
 	int stepTime = stepTimeCap;

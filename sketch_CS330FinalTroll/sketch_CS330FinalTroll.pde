@@ -38,7 +38,6 @@ Keys keys = new Keys();
 
 Todd todd;
 Player player;
-Harry harry;
 GridObject chest;
 
 PVector safeSpace = new PVector(19, 5);

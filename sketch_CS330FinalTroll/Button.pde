@@ -47,18 +47,9 @@ class Button extends Object
   {
   }
 
-  void drawGUI()
+  void drawLate()
   {
-		pushMatrix();
-		translate(position.x, position.y);
-		rotate(radians(rotation));
-		scale(scaleX, scaleY);
-
-    pushStyle();
-
-    textAlign(CENTER);
-
-    boolean mouseOver = containsPoint(new PVector(mouseX, mouseY));
+		boolean mouseOver = containsPoint(new PVector(mouseX, mouseY));
 
     //fill
     if (mouseOver)
@@ -79,10 +70,6 @@ class Button extends Object
       else fill(textColor);
       text(displayText, 0, 0);
     }
-
-		popStyle();
-
-		popMatrix();
   }
 
   void setDisplayText(String t)

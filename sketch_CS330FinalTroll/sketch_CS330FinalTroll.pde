@@ -10,15 +10,18 @@ boolean debug = true;
  * This variable controls the demo instance
  * 0 - Scenario 1:
  * 						Todd moves around and looks for the player. When the player
- * 					enters his line of sight, he attacks immediately.
+ * 					enters his line of sight, he attacks immediately and until he loses
+ * 					the player, kills the player, or dies.
  * 			Uses Thinking Pattern 1 (Hard Code)
  * 1 - Scenario 2:
  * 						Todd waits in a bush for the player. He will attack, flee, or stay
- * 					hidden based on the player's stats
+ * 					hidden based on the player's stats. If he is attacking and his
+ * 					health gets too low, he flees.
  * 			Uses Thinking Pattern 2 (Finite State Machine)
  * 2 - Scenario 3:
  * 						Todd waits in a bush for the player. He will attack, flee, or stay
- * 					hidden based on his own and the player's stats
+ * 					hidden based on his own and the player's stats. He continually makes
+ * 					decisions on what to do based on his response curves.
  * 			Uses Thinking Pattern 6 (Probability of Actions - Implemented with a
  * 														Response Curve)
  **/

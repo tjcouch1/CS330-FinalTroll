@@ -66,8 +66,9 @@ class Todd extends Movable
 	int energy = energyCap;
 	boolean tired = false;
 	
-	int health = 100;
-	int weaponDamage = 2;
+	float health = 100;
+	float weaponDamage = 5;
+	float attackRange = 1.2;
 	
 	//counter vars
 	int stepTimeCap = 5;
@@ -131,6 +132,13 @@ class Todd extends Movable
 			}
 	}
 	
+	void damage(float d)
+	{
+		health -= d;
+		if (health <= 0)
+			objects.destroy(this);
+	}
+	
 	void step()
 	{
 		sawPlayer = seesPlayer;
@@ -182,11 +190,21 @@ class Todd extends Movable
 			if (variation == 0 && !moved && moveDir != GridDir.NULL && path.getLooping())
 				path.reverseStep();
 			
-			//rotate with path or toward player
+			//rotate with path
 			if (!seesPlayer)
 				if (path.getNextMove() != GridDir.NULL)
 					rotation = getAngle(GridDir.Move(path.getNextMove()));
+			
+			//attack player (and get attacked)
+			if (position.dist(player.position) <= attackRange)
+			{
+				if (player.alive)
+					damage(player.weaponDamage);
+				if (seesPlayer)
+					player.damage(weaponDamage);
+			}
 		}
+		//rotate to player
 		if (seesPlayer)
 			rotation = getAngle(PVector.sub(player.position, position));
 		
@@ -257,18 +275,21 @@ class Todd extends Movable
 	void sense()
 	{
 		seesPlayer = false;
-		//sense the player in visual sight
-		if (position.dist(player.position) <= sightRange)
+		if (player.alive)
 		{
-			PVector forward = PVector.fromAngle(radians(rotation));
-			float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(player.position, position)));
-			if (playerAngle <= sightAngle)
+			//sense the player in visual sight
+			if (position.dist(player.position) <= sightRange)
+			{
+				PVector forward = PVector.fromAngle(radians(rotation));
+				float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(player.position, position)));
+				if (playerAngle <= sightAngle)
+					seesPlayer = true;
+			}
+			
+			//sense the player in hearing range
+			if (position.dist(player.position) <= hearRange)
 				seesPlayer = true;
 		}
-		
-		//sense the player in hearing range
-		if (position.dist(player.position) <= hearRange)
-			seesPlayer = true;
 	}
 	
 	Path MakePath()
@@ -316,6 +337,11 @@ class Todd extends Movable
 			//sight radius
 			noFill();
 			arc(0, 0, sightRange * grid.gridSize * 2, sightRange * grid.gridSize * 2, -radians(sightAngle), radians(sightAngle));
+			PVector lineVec = new PVector(sightRange * grid.gridSize, 0);
+			lineVec.rotate(radians(sightAngle));
+			line(0, 0, lineVec.x, lineVec.y);
+			lineVec.rotate(-radians(sightAngle * 2));
+			line(0, 0, lineVec.x, lineVec.y);
 			//hearing raidus
 			ellipse(0, 0, hearRange * grid.gridSize * 2, hearRange * grid.gridSize * 2);
 			

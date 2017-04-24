@@ -6,6 +6,10 @@ class Player extends Movable
 	int stepTimeCap = 5;
 	int stepTime = stepTimeCap;
 	
+	float health = 100;
+	float weaponDamage = 4;
+	boolean alive = true;
+	
 	Player()
 	{
 		super();
@@ -24,7 +28,17 @@ class Player extends Movable
 	{
 		c = color(#d93600);
 	}
-
+	
+	void damage(float d)
+	{
+		health -= d;
+		if (health <= 0)
+		{
+			alive = false;
+			objects.destroy(this);
+		}
+	}
+	
 	void KeyPressed(char key)
 	{
 		super.KeyPressed(key);

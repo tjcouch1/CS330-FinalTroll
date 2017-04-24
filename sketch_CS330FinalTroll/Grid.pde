@@ -66,7 +66,7 @@ class Grid
 		return null;
 	}
 	
-	GridObject removePlace (PVector pos)
+	GridObject removePlace(PVector pos)
 	{
 		GridObject o = gridContents[(int) pos.x][(int) pos.y];
 		gridContents[(int) pos.x][(int) pos.y] = null;

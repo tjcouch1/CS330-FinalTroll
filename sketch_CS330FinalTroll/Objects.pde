@@ -21,20 +21,30 @@ class Objects implements Iterable<Object>
 
 	Object remove(int i)
 	{
-		Object o = objects.remove(i);
-
-		return o;
+		if (i >= 0 && i < objects.size())
+		{
+			Object o = objects.remove(i);
+			
+			return o;
+		}
+		return null;
 	}
 
 	Object remove(Object o)
 	{
-		return objects.remove(objects.indexOf(o));
+		return remove(objects.indexOf(o));
 	}
 
 	PVector removeGrid(GridObject o)
 	{
 		remove(o);
 		return grid.remove(o);
+	}
+	
+	Object destroy(GridObject o)
+	{
+		removeGrid(o);
+		return o;
 	}
 
 	int removeAllGrid()
@@ -75,7 +85,8 @@ class Objects implements Iterable<Object>
 
 	void step()
 	{
-		for (Object o : objects)
+		//must be cloned so stuff can be deleted
+		for (Object o : (ArrayList<Object>) objects.clone())
 		{
 			if (o.active)
 				o.step();

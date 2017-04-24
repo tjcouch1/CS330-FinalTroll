@@ -4,6 +4,7 @@
 class Object
 {
 	PVector position;
+	PVector origin;
 	PVector size;
 	float rotation;//in degrees
 	float scaleX;
@@ -16,6 +17,7 @@ class Object
 	Object()
 	{
 		position = new PVector(0, 0);
+		origin = position.copy();
 		size = new PVector(10, 10);
 		rotation = 0;
 		scaleX = 1;
@@ -28,16 +30,14 @@ class Object
 		this();
 
 		this.position = pos.copy();
+		origin = position.copy();
 		c = color(200);
 	}
 
 	Object(PVector pos, PVector size)
 	{
-		this();
-
-		this.position = pos.copy();
+		this(pos);
 		this.size = size.copy();
-		c = color(200);
 	}
 
 	void step()

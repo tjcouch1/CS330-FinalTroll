@@ -42,13 +42,15 @@ class Path
 	
 	int step()
 	{
-		if (path.length > 0 && (step < path.length || getLooping()))
+		if (path.length > 0 || (step < path.length || getLooping()))
 		{
 			int currStep = step;
-			step++;
+			if (step < path.length)
+				step++;
 			if (getLooping())
 				step %= path.length;
-			return path[currStep];
+			if (currStep < path.length)
+				return path[currStep];
 		}
 		return GridDir.NULL;
 	}
@@ -60,6 +62,8 @@ class Path
 	
 	int getNextMove()
 	{
+		if (path.length <= 0 || step >= path.length)
+			return GridDir.NULL;
 		if (path[step] != GridDir.NULL)
 			return path[step];
 		int currStep = step + 1;

@@ -104,7 +104,8 @@ void StartGame(int var)
 
 	player = (Player) objects.addGrid(new Player(new PVector(22, 31)));
 	todd = (Todd) objects.addGrid(new Todd(bridge));
-
+	
+	/*
 	objects.addGrid(new Block(new PVector(17, 10)));
 	objects.addGrid(new Block(new PVector(18, 11)));
 	objects.addGrid(new Block(new PVector(19, 12)));
@@ -154,6 +155,7 @@ void StartGame(int var)
 	objects.addGrid(new Block(new PVector(16, 18)));
 	objects.addGrid(new Block(new PVector(17, 19)));
 	objects.addGrid(new Block(new PVector(17, 20)));
+	*/
 	
 	Object chest = objects.addGrid(new GridObject(chestPos));
 	chest.c = color(#816d1b);

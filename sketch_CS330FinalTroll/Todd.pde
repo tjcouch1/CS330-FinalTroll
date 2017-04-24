@@ -55,25 +55,33 @@ class Todd extends Movable
 	PVector dest;
 	boolean moved = false;
 	
+	//animation vars
 	boolean fighting = false;
 	boolean fleeing = false;
 	boolean healing = false;
 	boolean resting = false;
 	
+	//status vars
 	int energyCap = 600;
 	int energy = energyCap;
 	boolean tired = false;
 	
+	int health = 100;
+	int weaponDamage = 2;
+	
+	//counter vars
 	int stepTimeCap = 5;
 	int stepTime = stepTimeCap;
 	
-	int pathUpdateTimeCap = 60;
+	int pathUpdateTimeCap = 10;
 	int pathUpdateTime = pathUpdateTimeCap;
 	
 	//sensing
 	float sightRange = 7;
 	float sightAngle = 30;
+	float hearRange = 2;
 	boolean seesPlayer = false;
+	boolean sawPlayer = false;
 	
 	Todd()
 	{
@@ -108,7 +116,7 @@ class Todd extends Movable
 	PVector calcDestination()
 	{
 		if (!tired)
-			return bridge;
+			return origin;
 		else
 			switch (variation)
 			{
@@ -125,9 +133,42 @@ class Todd extends Movable
 	
 	void step()
 	{
+		sawPlayer = seesPlayer;
 		//sense for player
 		sense();
 		
+		//think hardcoded for variation 0
+		pathUpdateTime--;
+		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
+		{
+			switch (variation)
+			{
+				case 0:
+					if (seesPlayer)
+						path = MakePath();
+					else
+					{
+						if (sawPlayer)//path back to origin
+							path = MakePath();
+						
+						if (!path.getLooping() && position.x == origin.x && position.y == origin.y)
+							path = MakePath();
+					}
+					break;
+				
+				case 1:
+					dest = calcDestination();
+					path = MakePath();
+					break;
+				
+				default:
+					path = MakePath();
+					break;
+			}
+			pathUpdateTime = pathUpdateTimeCap;
+		}
+		
+		//act
 		int moveDir = -1;
 		stepTime--;
 		if (stepTime <= 0)
@@ -137,14 +178,17 @@ class Todd extends Movable
 			moveDir = path.step();
 			moved = Move(moveDir);
 			
-			//keep trying on current path
-			if (variation == 0 && !moved && moveDir != GridDir.NULL)
+			//keep trying on current static path if variation 0
+			if (variation == 0 && !moved && moveDir != GridDir.NULL && path.getLooping())
 				path.reverseStep();
 			
-			//rotate with path
-			if (path.getNextMove() != GridDir.NULL)
-				rotation = getAngle(GridDir.Move(path.getNextMove()));
+			//rotate with path or toward player
+			if (!seesPlayer)
+				if (path.getNextMove() != GridDir.NULL)
+					rotation = getAngle(GridDir.Move(path.getNextMove()));
 		}
+		if (seesPlayer)
+			rotation = getAngle(PVector.sub(player.position, position));
 		
 		if (tired)
 			c = color(#002020);
@@ -207,20 +251,12 @@ class Todd extends Movable
 					path = MakePath();
 				}
 			}
-			
-			pathUpdateTime--;
-			if (pathUpdateTime <= 0)
-			{
-				if (variation == 1)
-					dest = calcDestination();
-				
-				path = MakePath();
-			}
 		}
 	}
 	
 	void sense()
 	{
+		seesPlayer = false;
 		//sense the player in visual sight
 		if (position.dist(player.position) <= sightRange)
 		{
@@ -228,18 +264,44 @@ class Todd extends Movable
 			float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(player.position, position)));
 			if (playerAngle <= sightAngle)
 				seesPlayer = true;
-			else seesPlayer = false;
 		}
-		else seesPlayer = false;
+		
+		//sense the player in hearing range
+		if (position.dist(player.position) <= hearRange)
+			seesPlayer = true;
 	}
 	
 	Path MakePath()
 	{
+		//println("Creating Path");
 		if (variation == 0)
-			return new Path(pArray, true);
+			if (!seesPlayer)
+			{
+				if (!sawPlayer)//normal pathing
+				{
+					//println("Looped path");
+					return new Path(pArray, true);
+				}
+				else
+				{
+					//println("Origin");
+					return GeneratePath(origin);//go back to start
+				}
+			}
+			else
+			{
+				//println("Path to player");
+				return GeneratePath(player.position);
+			}
 		
+		//println("Dum");
+		return GeneratePath(dest);
+	}
+	
+	Path GeneratePath(PVector v)
+	{
 		pathUpdateTime = pathUpdateTimeCap;
-		Path p = pather.GeneratePath(position, dest);
+		Path p = pather.GeneratePath(position, v);
 		return p;
 	}
 	
@@ -251,6 +313,12 @@ class Todd extends Movable
 		
 		if (debug)
 		{
+			//sight radius
+			noFill();
+			arc(0, 0, sightRange * grid.gridSize * 2, sightRange * grid.gridSize * 2, -radians(sightAngle), radians(sightAngle));
+			//hearing raidus
+			ellipse(0, 0, hearRange * grid.gridSize * 2, hearRange * grid.gridSize * 2);
+			
 			rotate(-radians(rotation));
 			path.draw();
 		}

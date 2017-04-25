@@ -145,68 +145,11 @@ class Todd extends Movable
 		//sense for player
 		sense();
 		
-		//think hardcoded for variation 0
-		pathUpdateTime--;
-		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
-		{
-			switch (variation)
-			{
-				case 0:
-					if (seesPlayer)
-						path = MakePath();
-					else
-					{
-						if (sawPlayer)//path back to origin
-							path = MakePath();
-						
-						if (!path.getLooping() && position.x == origin.x && position.y == origin.y)
-							path = MakePath();
-					}
-					break;
-				
-				case 1:
-					dest = calcDestination();
-					path = MakePath();
-					break;
-				
-				default:
-					path = MakePath();
-					break;
-			}
-			pathUpdateTime = pathUpdateTimeCap;
-		}
+		//think about situation
+		think();
 		
-		//act
-		int moveDir = -1;
-		stepTime--;
-		if (stepTime <= 0)
-		{
-			//step on path
-			stepTime = stepTimeCap;
-			moveDir = path.step();
-			moved = Move(moveDir);
-			
-			//keep trying on current static path if variation 0
-			if (variation == 0 && !moved && moveDir != GridDir.NULL && path.getLooping())
-				path.reverseStep();
-			
-			//rotate with path
-			if (!seesPlayer)
-				if (path.getNextMove() != GridDir.NULL)
-					rotation = getAngle(GridDir.Move(path.getNextMove()));
-			
-			//attack player (and get attacked)
-			if (position.dist(player.position) <= attackRange)
-			{
-				if (player.alive)
-					damage(player.weaponDamage);
-				if (seesPlayer)
-					player.damage(weaponDamage);
-			}
-		}
-		//rotate to player
-		if (seesPlayer)
-			rotation = getAngle(PVector.sub(player.position, position));
+		//act to show thoughts
+		act();
 		
 		if (tired)
 			c = color(#002020);
@@ -217,13 +160,13 @@ class Todd extends Movable
 		healing = false;
 		resting = false;
 		
-		if (variation != 0)
+		/*if (variation != 0)
 		{
 			if (!tired)
 			{
 				if (!moved)
 				{
-					if ((position.x != dest.x || position.y != dest.y) && moveDir != GridDir.NULL)// && finished)
+					if (position.x != dest.x || position.y != dest.y)// && finished)
 						path = MakePath();
 					energy--;
 					if (new PVector(player.position.x - position.x, player.position.y - position.y).mag() < 4)
@@ -269,7 +212,7 @@ class Todd extends Movable
 					path = MakePath();
 				}
 			}
-		}
+		}*/
 	}
 	
 	void sense()
@@ -290,6 +233,76 @@ class Todd extends Movable
 			if (position.dist(player.position) <= hearRange)
 				seesPlayer = true;
 		}
+	}
+	
+	void think()
+	{
+		if (variation == 0)//think hardcoded for variation 0
+		{
+			pathUpdateTime--;
+			if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
+			{
+				switch (variation)
+				{
+					case 0:
+						if (seesPlayer)
+							path = MakePath();
+						else
+						{
+							if (sawPlayer)//path back to origin
+								path = MakePath();
+							
+							if (!path.getLooping() && position.x == origin.x && position.y == origin.y)
+								path = MakePath();
+						}
+						break;
+					
+					case 1:
+						dest = calcDestination();
+						path = MakePath();
+						break;
+					
+					default:
+						path = MakePath();
+						break;
+				}
+				pathUpdateTime = pathUpdateTimeCap;
+			}
+		}
+	}
+	
+	void act()
+	{
+		stepTime--;
+		if (stepTime <= 0)
+		{
+			//step on path
+			int moveDir = -1;
+			stepTime = stepTimeCap;
+			moveDir = path.step();
+			moved = Move(moveDir);
+			
+			//keep trying on current static path if variation 0
+			if (!moved && moveDir != GridDir.NULL && path.getLooping())
+				path.reverseStep();
+			
+			//rotate with path
+			if (!seesPlayer)
+				if (path.getNextMove() != GridDir.NULL)
+					rotation = getAngle(GridDir.Move(path.getNextMove()));
+			
+			//attack player (and get attacked)
+			if (position.dist(player.position) <= attackRange)
+			{
+				if (player.alive)
+					damage(player.weaponDamage);
+				if (seesPlayer)
+					player.damage(weaponDamage);
+			}
+		}
+		//rotate to player
+		if (seesPlayer)
+			rotation = getAngle(PVector.sub(player.position, position));
 	}
 	
 	Path MakePath()

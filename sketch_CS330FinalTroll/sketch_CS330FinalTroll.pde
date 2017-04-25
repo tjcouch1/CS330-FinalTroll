@@ -37,10 +37,13 @@ Pather pather = new Pather();
 
 Objects objects = new Objects();
 Objects decorations = new Objects();
+Objects players = new Objects();
 Keys keys = new Keys();
 
 Todd todd;
 Player player;
+float wDamage = 4;
+float weaponDamageCap = 7;
 GridObject chest;
 
 PVector safeSpace = new PVector(19, 5);
@@ -90,14 +93,29 @@ void setup()
 	
 	//game menu
 	gameMenu.add(new Button(new PVector(3 * grid.gridSize, 1 * grid.gridSize),
-		new PVector(5 * grid.gridSize, 1.5 * grid.gridSize), "Go Back"){
-			public void clicked()
+			new PVector(5 * grid.gridSize, 1.5 * grid.gridSize), "Go Back"){
+		public void clicked()
+		{
+			gameMenu.setActive(false);
+			mainMenu.setActive(true);
+			endGame();
+		}
+	});
+	gameMenu.add(new Button(new PVector(width - 4.5 * grid.gridSize, 1 * grid.gridSize),
+			new PVector(8 * grid.gridSize, 1.5 * grid.gridSize), "Player Damage: " + wDamage){
+		public void clicked()
+		{
+			wDamage++;
+			if (wDamage > weaponDamageCap)
+				wDamage = 0;
+			for (Object o : players)
 			{
-				gameMenu.setActive(false);
-				mainMenu.setActive(true);
-				endGame();
+				Player p = (Player) o;
+				p.weaponDamage = wDamage;
 			}
-		});
+			displayText = "Player Damage: " + wDamage;
+		}
+	});
 }
 
 void StartGame(int var)
@@ -105,7 +123,7 @@ void StartGame(int var)
 	variation = var;
 	gameStart = true;
 
-	player = (Player) objects.addGrid(new Player(new PVector(22, 31)));
+	player = (Player) players.add(objects.addGrid(new Player(new PVector(22, 31))));
 	todd = (Todd) objects.addGrid(new Todd(bridge));
 	
 	/*
@@ -179,6 +197,23 @@ void StartGame(int var)
 	bush.c = color(#0eb547, 170);
 	bush = objects.add(decorations.add(new GridObject(new PVector(8, 34), bushSize)));
 	bush.c = color(#0eb547, 170);
+	
+	if (variation > 0)
+	{
+		objects.addGrid(new Todd(new PVector(6, 28)));
+		objects.addGrid(new Todd(new PVector(4, 29)));
+		objects.addGrid(new Todd(new PVector(3, 31)));
+		objects.addGrid(new Todd(new PVector(4, 33)));
+		objects.addGrid(new Todd(new PVector(6, 34)));
+		objects.addGrid(new Todd(new PVector(8, 34)));
+		
+		if (variation == 2)
+		{
+			players.add(objects.addGrid(new Player(new PVector(24, 31))));
+			players.add(objects.addGrid(new Player(new PVector(23, 30))));
+			players.add(objects.addGrid(new Player(new PVector(23, 33))));
+		}
+	}
 }
 
 void endGame()
@@ -191,7 +226,8 @@ void endGame()
 	for (Object o : decorations)
 		objects.remove(o);
 	
-	decorations = new Objects();
+	players.clear();
+	decorations.clear();
 }
 
 void draw()

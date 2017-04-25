@@ -8,7 +8,7 @@ class Player extends Movable
 	
 	float healthCap = 100;
 	float health = healthCap;
-	float weaponDamage = 4;
+	float weaponDamage = wDamage;
 	boolean alive = true;
 	
 	Player()

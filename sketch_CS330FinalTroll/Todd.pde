@@ -50,20 +50,31 @@ class Todd extends Movable
 		GridDir.UP,
 		GridDir.UP
 		};
-
-	Path path;
-	PVector dest;
-	boolean moved = false;
 	
-	//animation vars
-	boolean fighting = false;
-	boolean pursuing = false;
+	//sensing
+	float sightRange = 7;
+	float sightAngle = 30;
+	float hearRange = 2;
+	float trollSenseRange = 10;
+	Objects sensedObjects = new Objects();
+	Player trackedPlayer;
+	boolean seesPlayer = false;
+	boolean sawPlayer = false;
 	
-	//status vars
+	//status vars (thinking)
 	float healthCap = 100;
 	float health = healthCap;
 	float weaponDamage = 5;
 	float attackRange = 1.2;
+	boolean returning = false;
+	
+	//animation vars (acting)
+	boolean fighting = false;
+	boolean pursuing = false;
+
+	Path path;
+	PVector dest;
+	boolean moved = false;
 	
 	//counter vars
 	int stepTimeCap = 5;
@@ -71,15 +82,6 @@ class Todd extends Movable
 	
 	int pathUpdateTimeCap = 10;
 	int pathUpdateTime = pathUpdateTimeCap;
-	
-	//sensing
-	float sightRange = 7;
-	float sightAngle = 30;
-	float hearRange = 2;
-	Objects sensedObjects = new Objects();
-	Player trackedPlayer;
-	boolean seesPlayer = false;
-	boolean sawPlayer = false;
 	
 	Todd()
 	{
@@ -111,24 +113,6 @@ class Todd extends Movable
 		c = color(#15538c);
 	}
 	
-	PVector calcDestination()
-	{
-		//f (!tired)
-			//return origin;
-		//else
-			switch (variation)
-			{
-			case 0:
-				return safeSpace;
-			//case 1:
-				//return harry.position;
-			case 2:
-				return safeSpace;
-			default:
-				return position;
-			}
-	}
-	
 	void damage(float d)
 	{
 		health -= d;
@@ -138,7 +122,6 @@ class Todd extends Movable
 	
 	void step()
 	{
-		sawPlayer = seesPlayer;
 		//sense the world
 		sense();
 		
@@ -152,6 +135,7 @@ class Todd extends Movable
 	void sense()
 	{
 		trackedPlayer = null;
+		sawPlayer = seesPlayer;
 		seesPlayer = false;
 		sensedObjects.clear();
 		for (Object o : objects)
@@ -178,6 +162,8 @@ class Todd extends Movable
 					break;
 				case "Todd":
 					if (o != this)
+						if (position.dist(o.position) <= trollSenseRange)
+							sensedObjects.add(o);
 					break;
 			}
 			
@@ -199,13 +185,18 @@ class Todd extends Movable
 	{
 		if (variation == 0)//think hardcoded for variation 0
 		{
+			if (sawPlayer && !seesPlayer)
+				returning = true;
+			if (position.x == origin.x && position.y == origin.y && !seesPlayer)
+				returning = false;
+			
 			pathUpdateTime--;
 			if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
 			{
 				switch (variation)
 				{
 					case 0:
-						if (seesPlayer)
+						/*if (seesPlayer)
 							path = MakePath();
 						else
 						{
@@ -214,7 +205,9 @@ class Todd extends Movable
 							
 							if (!path.getLooping() && position.x == origin.x && position.y == origin.y)
 								path = MakePath();
-						}
+						}*/
+						if (seesPlayer || sawPlayer || returning || (!returning && position.x == origin.x && position.y == origin.y && !path.getLooping()))
+							path = MakePath();
 						break;
 					
 					case 1:
@@ -229,6 +222,26 @@ class Todd extends Movable
 				pathUpdateTime = pathUpdateTimeCap;
 			}
 		}
+	}
+	
+	PVector calcDestination()
+	{
+		switch (variation)
+		{
+			case 0:
+				if (returning)
+					return origin;
+				if (seesPlayer)
+					return trackedPlayer.position;
+			break;
+			//case 1:
+				//return harry.position;
+				//break;
+			case 2:
+				return safeSpace;
+				//break;
+		}
+		return position;
 	}
 	
 	void act()
@@ -293,24 +306,18 @@ class Todd extends Movable
 	{
 		//println("Creating Path");
 		if (variation == 0)
-			if (!seesPlayer)
+		{
+			if (!seesPlayer && !sawPlayer && !returning && position.x == origin.x && position.y == origin.y && (path == null || !path.getLooping()))//normal pathing
 			{
-				if (!sawPlayer)//normal pathing
-				{
-					//println("Looped path");
-					return new Path(pArray, true);
-				}
-				else
-				{
-					//println("Origin");
-					return GeneratePath(origin);//go back to start
-				}
+				//println("Looped path");
+				return new Path(pArray, true);
 			}
 			else
 			{
-				//println("Path to player");
-				return GeneratePath(trackedPlayer.position);
+				//println("Origin");
+				return GeneratePath(calcDestination());//go back to start or puruse player
 			}
+		}
 		
 		//println("Dum");
 		return GeneratePath(dest);
@@ -333,14 +340,17 @@ class Todd extends Movable
 		{
 			//sight radius
 			noFill();
+			stroke(#000000, 150);
 			arc(0, 0, sightRange * grid.gridSize * 2, sightRange * grid.gridSize * 2, -radians(sightAngle), radians(sightAngle));
 			PVector lineVec = new PVector(sightRange * grid.gridSize, 0);
 			lineVec.rotate(radians(sightAngle));
 			line(0, 0, lineVec.x, lineVec.y);
 			lineVec.rotate(-radians(sightAngle * 2));
 			line(0, 0, lineVec.x, lineVec.y);
-			//hearing raidus
+			//hearing radius
 			ellipse(0, 0, hearRange * grid.gridSize * 2, hearRange * grid.gridSize * 2);
+			//troll sense radius
+			ellipse(0, 0, trollSenseRange * grid.gridSize * 2, trollSenseRange * grid.gridSize * 2);
 			
 			rotate(-radians(rotation));
 			

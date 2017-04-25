@@ -73,6 +73,11 @@ class Grid
 		return o;
 	}
 	
+	GridObject getPlace(PVector pos)
+	{
+		return gridContents[(int) pos.x][(int) pos.y];
+	}
+	
 	GridObject updateGridObject(GridObject o)
 	{
 		remove(o);

@@ -57,16 +57,11 @@ class Todd extends Movable
 	
 	//animation vars
 	boolean fighting = false;
-	boolean fleeing = false;
-	boolean healing = false;
-	boolean resting = false;
+	boolean pursuing = false;
 	
 	//status vars
-	int energyCap = 600;
-	int energy = energyCap;
-	boolean tired = false;
-	
-	float health = 100;
+	float healthCap = 100;
+	float health = healthCap;
 	float weaponDamage = 5;
 	float attackRange = 1.2;
 	
@@ -81,6 +76,7 @@ class Todd extends Movable
 	float sightRange = 7;
 	float sightAngle = 30;
 	float hearRange = 2;
+	Objects seenObjects = new Objects();
 	boolean seesPlayer = false;
 	boolean sawPlayer = false;
 	
@@ -116,9 +112,9 @@ class Todd extends Movable
 	
 	PVector calcDestination()
 	{
-		if (!tired)
-			return origin;
-		else
+		//f (!tired)
+			//return origin;
+		//else
 			switch (variation)
 			{
 			case 0:
@@ -142,7 +138,7 @@ class Todd extends Movable
 	void step()
 	{
 		sawPlayer = seesPlayer;
-		//sense for player
+		//sense the world
 		sense();
 		
 		//think about situation
@@ -150,88 +146,43 @@ class Todd extends Movable
 		
 		//act to show thoughts
 		act();
-		
-		if (tired)
-			c = color(#002020);
-		else c = color(#15538c);
-		
-		fighting = false;
-		fleeing = false;
-		healing = false;
-		resting = false;
-		
-		/*if (variation != 0)
-		{
-			if (!tired)
-			{
-				if (!moved)
-				{
-					if (position.x != dest.x || position.y != dest.y)// && finished)
-						path = MakePath();
-					energy--;
-					if (new PVector(player.position.x - position.x, player.position.y - position.y).mag() < 4)
-					{
-						energy -= 3;
-						fighting = true;
-					}
-				}
-				
-				if (energy <= 0)
-				{
-					tired = true;
-					dest = calcDestination();
-					path = MakePath();
-				}
-			}
-			else
-			{
-				if (!moved)
-				{
-					if ((position.x != dest.x || position.y != dest.y) && finished)
-						path = MakePath();
-					if (new PVector(dest.x - position.x, dest.y - position.y).mag() <= 1.5)
-					{
-						if (variation != 1)
-						{
-							energy += 3;
-							resting = true;
-						}
-						else
-						{
-							energy += 4;
-							healing = true;
-						}
-					}
-				}
-				else fleeing = true;
-				
-				if (energy >= energyCap)
-				{
-					tired = false;
-					dest = calcDestination();
-					path = MakePath();
-				}
-			}
-		}*/
 	}
 	
 	void sense()
 	{
 		seesPlayer = false;
-		if (player.alive)
+		seenObjects.clear();
+		for (Object o : objects)
 		{
-			//sense the player in visual sight
-			if (position.dist(player.position) <= sightRange)
+			//println(o.getClass().getSimpleName());
+			switch(o.getClass().getSimpleName())
 			{
-				PVector forward = PVector.fromAngle(radians(rotation));
-				float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(player.position, position)));
-				if (playerAngle <= sightAngle)
-					seesPlayer = true;
+				case "Player":
+					Player p = (Player) o;
+					if (p.alive)
+					{
+						//sense the player in visual sight
+						if (position.dist(p.position) <= sightRange)
+						{
+							PVector forward = PVector.fromAngle(radians(rotation));
+							float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(p.position, position)));
+							if (playerAngle <= sightAngle)
+								seesPlayer = true;
+						}
+						
+						//sense the player in hearing range
+						if (position.dist(o.position) <= hearRange)
+							seesPlayer = true;
+					}
+					
+					if (seesPlayer)
+						seenObjects.add(o);
+					break;
+				case "Todd":
+					//if (o != this)
+					break;
 			}
 			
-			//sense the player in hearing range
-			if (position.dist(player.position) <= hearRange)
-				seesPlayer = true;
 		}
 	}
 	
@@ -273,6 +224,9 @@ class Todd extends Movable
 	
 	void act()
 	{
+		fighting = false;
+		pursuing = false;
+		
 		stepTime--;
 		if (stepTime <= 0)
 		{
@@ -303,6 +257,15 @@ class Todd extends Movable
 		//rotate to player
 		if (seesPlayer)
 			rotation = getAngle(PVector.sub(player.position, position));
+		
+		//animate
+		if (seesPlayer)
+		{
+			if (position.dist(player.position) <= attackRange)
+				fighting = true;
+			if (moved)
+				pursuing = true;
+		}
 	}
 	
 	Path MakePath()
@@ -359,8 +322,17 @@ class Todd extends Movable
 			ellipse(0, 0, hearRange * grid.gridSize * 2, hearRange * grid.gridSize * 2);
 			
 			rotate(-radians(rotation));
+			
 			path.draw();
 		}
+		else rotate(-radians(rotation));
+		
+		//health
+		fill(#f02b08);
+		stroke(#000000);
+		rect(-grid.gridSize * 3 / 4 - 1, -grid.gridSize - 1, grid.gridSize * 3 / 2 + 2, 2);
+		stroke(#2bff09);
+		line(-grid.gridSize * 3 / 4, -grid.gridSize, -grid.gridSize * 3 / 4 + health * grid.gridSize * 3 / 2 / healthCap, -grid.gridSize);
 	}
 	
 	/**
@@ -371,16 +343,9 @@ class Todd extends Movable
 	{
 		String printString = "";
 		if (fighting)
-			printString = "Combat!";
-		else if (fleeing)
-			printString = "Fleeing!";
-		else if (resting)
-			printString = "Resting!";
-		else if (healing)
-			printString = "Healing!";
-		
-		if (seesPlayer)
-			printString = "Sees Player!";
+			printString = "Fighting!";
+		else if (pursuing)
+			printString = "Pursuing!";
 		
 		fill(0);
 		text(printString, (position.x + 5 / 2) * grid.gridSize - 1, (position.y + 3 / 2) * grid.gridSize - 1);

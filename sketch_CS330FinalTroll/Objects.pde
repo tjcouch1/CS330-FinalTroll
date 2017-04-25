@@ -18,6 +18,12 @@ class Objects implements Iterable<Object>
 		add(o);
 		return grid.add(o);
 	}
+	
+	//do not use with grid!!
+	void clear()
+	{
+		objects.clear();
+	}
 
 	Object remove(int i)
 	{

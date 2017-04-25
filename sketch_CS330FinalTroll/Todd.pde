@@ -76,7 +76,8 @@ class Todd extends Movable
 	float sightRange = 7;
 	float sightAngle = 30;
 	float hearRange = 2;
-	Objects seenObjects = new Objects();
+	Objects sensedObjects = new Objects();
+	Player trackedPlayer;
 	boolean seesPlayer = false;
 	boolean sawPlayer = false;
 	
@@ -150,11 +151,11 @@ class Todd extends Movable
 	
 	void sense()
 	{
+		trackedPlayer = null;
 		seesPlayer = false;
-		seenObjects.clear();
+		sensedObjects.clear();
 		for (Object o : objects)
 		{
-			//println(o.getClass().getSimpleName());
 			switch(o.getClass().getSimpleName())
 			{
 				case "Player":
@@ -167,23 +168,31 @@ class Todd extends Movable
 							PVector forward = PVector.fromAngle(radians(rotation));
 							float playerAngle = degrees(PVector.angleBetween(forward, PVector.sub(p.position, position)));
 							if (playerAngle <= sightAngle)
-								seesPlayer = true;
+								seePlayer(p);
 						}
 						
 						//sense the player in hearing range
-						if (position.dist(o.position) <= hearRange)
-							seesPlayer = true;
+						if (position.dist(p.position) <= hearRange)
+							seePlayer(p);
 					}
-					
-					if (seesPlayer)
-						seenObjects.add(o);
 					break;
 				case "Todd":
-					//if (o != this)
+					if (o != this)
 					break;
 			}
 			
 		}
+	}
+	
+	void seePlayer(Player p)
+	{
+		if (!seesPlayer)
+		{
+			seesPlayer = true;
+			trackedPlayer = p;
+		}
+		if (!sensedObjects.contains(p))
+			sensedObjects.add(p);
 	}
 	
 	void think()
@@ -245,23 +254,35 @@ class Todd extends Movable
 				if (path.getNextMove() != GridDir.NULL)
 					rotation = getAngle(GridDir.Move(path.getNextMove()));
 			
-			//attack player (and get attacked)
-			if (position.dist(player.position) <= attackRange)
+			for (Object o : sensedObjects)
 			{
-				if (player.alive)
-					damage(player.weaponDamage);
-				if (seesPlayer)
-					player.damage(weaponDamage);
+				switch(o.getClass().getSimpleName())
+				{
+					case "Player":
+						Player p = (Player) o;
+						//get attacked
+						if (position.dist(p.position) <= attackRange)
+						{
+							if (p.alive)
+								damage(p.weaponDamage);
+						}
+						break;
+				}
 			}
+			
+			if (trackedPlayer != null)//attack tracked player
+				if (position.dist(trackedPlayer.position) <= attackRange)
+					if (seesPlayer)
+						trackedPlayer.damage(weaponDamage);
 		}
 		//rotate to player
 		if (seesPlayer)
-			rotation = getAngle(PVector.sub(player.position, position));
+			rotation = getAngle(PVector.sub(trackedPlayer.position, position));
 		
 		//animate
 		if (seesPlayer)
 		{
-			if (position.dist(player.position) <= attackRange)
+			if (position.dist(trackedPlayer.position) <= attackRange)
 				fighting = true;
 			if (moved)
 				pursuing = true;
@@ -288,7 +309,7 @@ class Todd extends Movable
 			else
 			{
 				//println("Path to player");
-				return GeneratePath(player.position);
+				return GeneratePath(trackedPlayer.position);
 			}
 		
 		//println("Dum");

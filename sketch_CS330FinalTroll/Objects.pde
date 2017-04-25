@@ -24,6 +24,11 @@ class Objects implements Iterable<Object>
 	{
 		objects.clear();
 	}
+	
+	boolean contains(Object o)
+	{
+		return objects.contains(o);
+	}
 
 	Object remove(int i)
 	{

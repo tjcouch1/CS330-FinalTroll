@@ -210,11 +210,6 @@ class Todd extends Movable
 							path = MakePath();
 						break;
 					
-					case 1:
-						dest = calcDestination();
-						path = MakePath();
-						break;
-					
 					default:
 						path = MakePath();
 						break;
@@ -237,8 +232,8 @@ class Todd extends Movable
 			//case 1:
 				//return harry.position;
 				//break;
-			case 2:
-				return safeSpace;
+			//case 2:
+				//return safeSpace;
 				//break;
 		}
 		return position;
@@ -320,7 +315,7 @@ class Todd extends Movable
 		}
 		
 		//println("Dum");
-		return GeneratePath(dest);
+		return GeneratePath(calcDestination());
 	}
 	
 	Path GeneratePath(PVector v)

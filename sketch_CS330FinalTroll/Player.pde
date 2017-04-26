@@ -10,6 +10,7 @@ class Player extends Movable
 	float health = healthCap;
 	float weaponDamage = wDamage;
 	boolean alive = true;
+	boolean attacked = false;
 	
 	Player()
 	{
@@ -28,6 +29,11 @@ class Player extends Movable
 	void InitDefault()
 	{
 		c = color(#d93600);
+	}
+	
+	void step()
+	{
+		attacked = false;
 	}
 	
 	void damage(float d)

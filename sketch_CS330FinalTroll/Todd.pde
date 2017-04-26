@@ -70,10 +70,14 @@ class Todd extends Movable
 	boolean returning = false;
 	int numTrollsSeePlayers = 0;
 	float threat = 0;
+	int attentionThreshold = 10;
+	int dangerThreshold = 3;
 	
 	//animation vars (acting)
 	boolean fighting = false;
 	boolean pursuing = false;
+	float hideAngle;
+	boolean returned = false;
 
 	Path path;
 	PVector dest;
@@ -121,7 +125,8 @@ class Todd extends Movable
 		c = color(#15538c);
 		
 		if (variation > 0)
-			rotation = getAngle(chestPos.x + 2 - position.x, chestPos.y - position.y);
+			rotation = getAngle(new PVector(chestPos.x + 2 - position.x, chestPos.y - position.y));
+		hideAngle = rotation;
 	}
 	
 	void damage(float d)
@@ -205,7 +210,15 @@ class Todd extends Movable
 				if (position.x == origin.x && position.y == origin.y && !seesPlayer)
 					returning = false;
 					break;
-			case 1://determine state
+			case 1:
+				break;
+		}
+		
+		pathUpdateTime--;
+		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
+		{
+			if (variation > 0)
+			{
 				numTrollsSeePlayers = 0;
 				for (Object o : objects)
 				{
@@ -219,13 +232,8 @@ class Todd extends Movable
 					}
 				}
 				threat = calculateNetThreat(sensedObjects);
-				sM.getCurrentState().transition();
-				break;
-		}
-		
-		pathUpdateTime--;
-		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
-		{
+			}
+			
 			switch (variation)
 			{
 				case 0://hardcoded stuffs
@@ -233,7 +241,8 @@ class Todd extends Movable
 						path = MakePath();
 					break;
 				
-				case 1://think of current state
+				case 1://think of current state//determine state
+					sM.getCurrentState().transition();
 					sM.getCurrentState().think();
 					//path = MakePath();
 					break;
@@ -246,26 +255,13 @@ class Todd extends Movable
 		}
 	}
 	
-	PVector calcDestination()
-	{
-		switch (variation)
-		{
-			case 0:
-				if (returning)
-					return origin;
-				if (seesPlayer)
-					return trackedPlayer.position;
-			break;
-		}
-		return position;
-	}
-	
 	float calculateNetThreat(Objects objects)
 	{
 		float netPlayerHealth = 0;
 		float netPlayerDamage = 0;
-		float netTrollHealth = 0;
-		float netTrollDamage = 0;
+		float netTrollHealth = health;
+		float netTrollDamage = weaponDamage;
+		int numTrollsCounted = 0;
 		for (Object o : objects)
 		{
 			switch(o.getClass().getSimpleName())
@@ -276,9 +272,13 @@ class Todd extends Movable
 					netPlayerDamage += p.weaponDamage;
 					break;
 				case "Todd":
-					Todd t = (Todd) o;
-					netTrollHealth += t.health;
-					netTrollDamage += t.weaponDamage;
+					if (numTrollsCounted < 4)//max 4 because only four trolls can attack at once
+					{
+						Todd t = (Todd) o;
+						netTrollHealth -= t.health;
+						netTrollDamage -= t.weaponDamage;
+						numTrollsCounted++;
+					}
 					break;
 			}
 		}
@@ -293,38 +293,62 @@ class Todd extends Movable
 	{
 		StateMachine s = new StateMachine();
 		s.add(new State("Hide"){
+			public void start()
+			{
+				returned = false;
+			}
 			public void transition()
 			{
-				if (threat > 0)//if the enemy is more powerful
+				//if almost dead
+				if (health < 4)
 				{
-					//if not many trolls are paying attention and the enemy is very dangerous
-					if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > 10)
+					if (sM.printTransitions)
+						println("Hide -> Flee from almost dead");
+					sM.setCurrentState("Flee");
+				}
+				else if (seesPlayer)
+				{
+					if (threat > 0)//if the enemy is more powerful
 					{
-						println("Fleeing from not enough paying attention");
-						sM.setCurrentState("Flee");
+						//if not many trolls are paying attention and the enemy is very dangerous
+						if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > attentionThreshold)
+						{
+							if (sM.printTransitions)
+								println("Hide -> Flee from not enough paying attention");
+							sM.setCurrentState("Flee");
+						}
+						//if the enemy is very, very dangerous
+						else if (threat > dangerThreshold)
+						{
+							if (sM.printTransitions)
+								println("Hide -> Flee from too dangerous");
+							sM.setCurrentState("Flee");
+						}
 					}
-					//if the enemy is very, very dangerous
-					else if (threat > 20)
+					else
 					{
-						println("Fleeing from too dangerous");
-						sm.stcurrentState("Flee");
+						//if many of the other trolls are paying attention
+						if (numTrolls > 0 && (numTrollsSeePlayers / numTrolls > .7))
+						{
+							if (sM.printTransitions)
+								println("Hide -> Attack");
+							sM.setCurrentState("Attack");
+						}
 					}
 				}
-				else
-				{
-					//if many of the other trolls are paying attention
-					if (numTrolls > 0 && (numTrollsSeePlayers / numTrolls > .7))
-						sM.setCurrentState("Attack");
-				}
-				
 			}
 			public void think()
 			{
-				
+				//always return to origin
+				path = MakePath();
 			}
 			public void act()
 			{
-				
+				if (sM.getCurrentState().name.equals("Hide") && !returned && position.x == origin.x && position.y == origin.y)
+				{
+					returned = true;
+					rotation = hideAngle;
+				}
 			}
 		});
 		s.setCurrentState("Hide");//hide is default state
@@ -332,11 +356,44 @@ class Todd extends Movable
 		s.add(new State("Attack"){
 			public void transition()
 			{
-				
+				//if almost dead
+				if (health < 4)
+				{
+					if (sM.printTransitions)
+						println("Attack -> Flee from almost dead");
+					sM.setCurrentState("Flee");
+				}
+				else if (seesPlayer)
+				{
+					if (threat > 0)//if the enemy is more powerful
+					{
+						//if not many trolls are paying attention and the enemy is very dangerous
+						if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > attentionThreshold)
+						{
+							if (sM.printTransitions)
+								println("Attack -> Hide from not enough paying attention");
+							sM.setCurrentState("Hide");
+						}
+						//if the enemy is very, very dangerous
+						else if (threat > dangerThreshold)
+						{
+							if (sM.printTransitions)
+								println("Attack -> Flee from too dangerous");
+							sM.setCurrentState("Flee");
+						}
+					}
+				}
+				else
+				{
+					if (sM.printTransitions)
+						println("Attack -> Hide from losing sight");
+					sM.setCurrentState("Hide");
+				}
 			}
 			public void think()
 			{
-				
+				//always pursue player
+				path = MakePath();
 			}
 			public void act()
 			{
@@ -347,19 +404,87 @@ class Todd extends Movable
 		s.add(new State("Flee"){
 			public void transition()
 			{
-				
+				if (position.dist(safeSpace) < 3 && health == healthCap)
+				{
+					if (sM.printTransitions)
+						println("Flee -> Hide from full health");
+					sM.setCurrentState("Hide");
+				}
 			}
 			public void think()
 			{
-				
+				//always run to safe space
+				path = MakePath();
 			}
 			public void act()
 			{
-				
+				if (position.dist(safeSpace) < 3 && health < healthCap)
+					health++;
 			}
 		});
 		
 		return s;
+	}
+	
+	Path MakePath()
+	{
+		//println("Creating Path");
+		switch (variation)
+		{
+			case 0:
+				if (!seesPlayer && !sawPlayer && !returning && position.x == origin.x && position.y == origin.y && (path == null || !path.getLooping()))//normal pathing
+				{
+					//println("Looped path");
+					return new Path(pArray, true);
+				}
+				else
+				{
+					//println("Origin");
+					return generatePath(calcDestination());//go back to start or puruse player
+				}
+				//break;
+			//case 1:
+				//break;
+			//case 2:
+				//break;
+		}
+		
+		//println("Dum");
+		return generatePath(calcDestination());
+	}
+	
+	PVector calcDestination()
+	{
+		switch (variation)
+		{
+			case 0:
+				if (returning)
+					return origin;
+				if (seesPlayer)
+					return trackedPlayer.position;
+				break;
+			case 1:
+				switch (sM.getCurrentState().name)
+				{
+					case "Hide":
+						return origin;
+					case "Attack":
+						return trackedPlayer.position;
+					case "Flee":
+						return safeSpace;
+				}
+				break;
+			case 2:
+				break;
+		}
+		return position;
+	}
+	
+	Path generatePath(PVector v)
+	{
+		pathUpdateTime = pathUpdateTimeCap;
+		Path p = pather.GeneratePath(position, v);
+		return p;
 	}
 	
 	void act()
@@ -395,10 +520,11 @@ class Todd extends Movable
 						//get attacked by all players in range
 						if (position.dist(p.position) <= attackRange)
 						{
-							if (p.alive)
+							if (p.alive && !p.attacked)
 							{
 								damage(p.weaponDamage);
 								attacking.add(p);
+								p.attacked = true;
 							}
 						}
 						break;
@@ -407,53 +533,28 @@ class Todd extends Movable
 			
 			if (trackedPlayer != null)//attack tracked player
 			{
-				if (attacking.size() > 0 && !attacking.contains(trackedPlayer))//change trackedPlayer to attacking player
+				if (attacking.size() > 0 && !attacking.contains(trackedPlayer))//change focus to attacking player
 					trackedPlayer = (Player) attacking.get(0);
 				if (position.dist(trackedPlayer.position) <= attackRange)
 					if (seesPlayer)
 						trackedPlayer.damage(weaponDamage);
 			}
+			
+			if (variation == 1)
+				sM.getCurrentState().act();
 		}
 		//rotate to player
 		if (seesPlayer)
 			rotation = getAngle(PVector.sub(trackedPlayer.position, position));
 		
 		//animate
-		if (seesPlayer)
+		if (variation == 0 && seesPlayer)
 		{
 			if (position.dist(trackedPlayer.position) <= attackRange)
 				fighting = true;
 			if (moved)
 				pursuing = true;
 		}
-	}
-	
-	Path MakePath()
-	{
-		//println("Creating Path");
-		if (variation == 0)
-		{
-			if (!seesPlayer && !sawPlayer && !returning && position.x == origin.x && position.y == origin.y && (path == null || !path.getLooping()))//normal pathing
-			{
-				//println("Looped path");
-				return new Path(pArray, true);
-			}
-			else
-			{
-				//println("Origin");
-				return GeneratePath(calcDestination());//go back to start or puruse player
-			}
-		}
-		
-		//println("Dum");
-		return GeneratePath(calcDestination());
-	}
-	
-	Path GeneratePath(PVector v)
-	{
-		pathUpdateTime = pathUpdateTimeCap;
-		Path p = pather.GeneratePath(position, v);
-		return p;
 	}
 	
 	void draw()
@@ -499,10 +600,21 @@ class Todd extends Movable
 	void drawGUI()
 	{
 		String printString = "";
-		if (fighting)
-			printString = "Fighting!";
-		else if (pursuing)
-			printString = "Pursuing!";
+		
+		switch (variation)
+		{
+			case 0:
+				if (fighting)
+					printString = "Fighting!";
+				else if (pursuing)
+					printString = "Pursuing!";
+				break;
+			case 1:
+				printString = sM.getCurrentState().name;
+				break;
+			case 2:
+				break;
+		}
 		
 		fill(0);
 		text(printString, (position.x + 5 / 2) * grid.gridSize - 1, (position.y + 3 / 2) * grid.gridSize - 1);

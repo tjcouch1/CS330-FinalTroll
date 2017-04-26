@@ -10,6 +10,11 @@ class State
     this.name = name;
   }
   
+  void start()//something to do every time this state is set to current
+  {
+    
+  }
+  
   void transition()//determines whether to transition and what to transition to
   {
     
@@ -20,7 +25,7 @@ class State
     
   }
   
-  void act()
+  void act()//do random stuff every step
   {
     
   }

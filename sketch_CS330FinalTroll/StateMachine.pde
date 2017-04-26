@@ -8,6 +8,8 @@ class StateMachine
   Hashtable<String, State> states = new Hashtable<String, State>();
   State currentState;
   
+  boolean printTransitions = false;
+  
   StateMachine()
   {
     
@@ -27,6 +29,7 @@ class StateMachine
   void setCurrentState(String key)
   {
     currentState = get(key);
+    currentState.start();
   }
   
   State getCurrentState()

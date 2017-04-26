@@ -44,8 +44,9 @@ Keys keys = new Keys();
 Todd todd;
 Player player;
 float wDamage = 4;
+float weaponDamageCap = 100;
 float trollDamage = 5;
-float weaponDamageCap = 10;
+float trollWeaponDamageCap = 10;
 GridObject chest;
 
 PVector safeSpace = new PVector(19, 5);
@@ -107,7 +108,7 @@ void setup()
 			new PVector(8 * grid.gridSize, 1.5 * grid.gridSize), "Player Damage: " + wDamage){
 		public void clicked()
 		{
-			wDamage++;
+			wDamage += 10;
 			if (wDamage > weaponDamageCap)
 				wDamage = 0;
 			for (Object o : players)
@@ -122,8 +123,8 @@ void setup()
 			new PVector(8 * grid.gridSize, 1.5 * grid.gridSize), "Troll Damage: " + trollDamage){
 		public void clicked()
 		{
-			trollDamage++;
-			if (trollDamage > weaponDamageCap)
+			trollDamage += 1;
+			if (trollDamage > trollWeaponDamageCap)
 				trollDamage = 0;
 			for (Object o : trolls)
 			{
@@ -142,6 +143,23 @@ void StartGame(int var)
 
 	player = (Player) players.add(objects.addGrid(new Player(new PVector(22, 31))));
 	todd = (Todd) trolls.add(objects.addGrid(new Todd(bridge)));
+	
+	if (variation > 0)
+	{
+		trolls.add(objects.addGrid(new Todd(new PVector(6, 28))));
+		trolls.add(objects.addGrid(new Todd(new PVector(4, 29))));
+		trolls.add(objects.addGrid(new Todd(new PVector(3, 31))));
+		trolls.add(objects.addGrid(new Todd(new PVector(4, 33))));
+		trolls.add(objects.addGrid(new Todd(new PVector(6, 34))));
+		trolls.add(objects.addGrid(new Todd(new PVector(8, 34))));
+		
+		if (variation == 2)
+		{
+			players.add(objects.addGrid(new Player(new PVector(24, 31))));
+			players.add(objects.addGrid(new Player(new PVector(23, 30))));
+			players.add(objects.addGrid(new Player(new PVector(23, 32))));
+		}
+	}
 	
 	/*
 	objects.addGrid(new Block(new PVector(17, 10)));
@@ -214,23 +232,6 @@ void StartGame(int var)
 	bush.c = color(#0eb547, 170);
 	bush = objects.add(decorations.add(new GridObject(new PVector(8, 34), bushSize)));
 	bush.c = color(#0eb547, 170);
-	
-	if (variation > 0)
-	{
-		trolls.add(objects.addGrid(new Todd(new PVector(6, 28))));
-		trolls.add(objects.addGrid(new Todd(new PVector(4, 29))));
-		trolls.add(objects.addGrid(new Todd(new PVector(3, 31))));
-		trolls.add(objects.addGrid(new Todd(new PVector(4, 33))));
-		trolls.add(objects.addGrid(new Todd(new PVector(6, 34))));
-		trolls.add(objects.addGrid(new Todd(new PVector(8, 34))));
-		
-		if (variation == 2)
-		{
-			players.add(objects.addGrid(new Player(new PVector(24, 31))));
-			players.add(objects.addGrid(new Player(new PVector(23, 30))));
-			players.add(objects.addGrid(new Player(new PVector(23, 33))));
-		}
-	}
 }
 
 void endGame()
@@ -260,6 +261,32 @@ void mousePressed()
 
 void keyPressed()
 {
+	if (key == ESC && gameMenu.active)
+	{
+		gameMenu.setActive(false);
+		mainMenu.setActive(true);
+		endGame();
+		key = 0;
+	}
+	if (key == 49 && mainMenu.active)//1
+	{
+		StartGame(0);
+		mainMenu.setActive(false);
+		gameMenu.setActive(true);
+	}
+	if (key == 50 && mainMenu.active)//2
+	{
+		StartGame(1);
+		mainMenu.setActive(false);
+		gameMenu.setActive(true);
+	}
+	if (key == 51 && mainMenu.active)//3
+	{
+		StartGame(2);
+		mainMenu.setActive(false);
+		gameMenu.setActive(true);
+	}
+	
 	if (keys.KeyPressed(key))
 	{
 		objects.KeyPressed(key);

@@ -91,6 +91,7 @@ class Todd extends Movable
 	int pathUpdateTime = pathUpdateTimeCap;
 	
 	StateMachine sM;
+	ResponseCurve rC;
 	
 	Todd()
 	{
@@ -112,11 +113,13 @@ class Todd extends Movable
 		
 		InitDefault();
 	}
-
+	
 	void InitDefault()
 	{
 		if (variation == 1)
 		 	sM = createStateMachine();
+		else if (variation == 2)
+			rC = createResponseCurve();
 		
 		dest = calcDestination();
 		
@@ -215,24 +218,22 @@ class Todd extends Movable
 		}
 		
 		pathUpdateTime--;
-		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
+		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)//figure out how many trolls see players
 		{
-			if (variation > 0)
+			numTrollsSeePlayers = 0;
+			for (Object o : objects)
 			{
-				numTrollsSeePlayers = 0;
-				for (Object o : objects)
+				switch(o.getClass().getSimpleName())
 				{
-					switch(o.getClass().getSimpleName())
-					{
-						case "Todd":
-							Todd t = (Todd) o;
-							if (t.seesPlayer)
-								numTrollsSeePlayers++;
-							break;
-					}
+					case "Todd":
+						Todd t = (Todd) o;
+						if (t.seesPlayer)
+							numTrollsSeePlayers++;
+						break;
 				}
-				threat = calculateNetThreat(sensedObjects);
 			}
+			
+			threat = calculateNetThreat(sensedObjects);
 			
 			switch (variation)
 			{
@@ -248,6 +249,7 @@ class Todd extends Movable
 					break;
 				
 				case 2:
+					rC.chooseBucket();
 					path = MakePath();
 					break;
 			}
@@ -289,7 +291,7 @@ class Todd extends Movable
 		return timeToBeKilled - timeToKill;
 	}
 	
-	StateMachine createStateMachine()
+	StateMachine createStateMachine()//variation 1
 	{
 		StateMachine s = new StateMachine();
 		s.add(new State("Hide"){
@@ -426,6 +428,128 @@ class Todd extends Movable
 		return s;
 	}
 	
+	ResponseCurve createResponseCurve()//variation 2
+	{
+		ResponseCurve r = new ResponseCurve();
+		r.add(new ResponseBucket("Hide"){
+			public void start()
+			{
+				returned = false;
+			}
+			public void size()
+			{
+				//if almost dead
+				if (health < 4)
+				{
+					if (sM.printTransitions)
+						println("Hide -> Flee from almost dead");
+					sM.setCurrentState("Flee");
+				}
+				else if (seesPlayer)
+				{
+					if (threat > 0)//if the enemy is more powerful
+					{
+						//if not many trolls are paying attention and the enemy is very dangerous
+						if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > attentionThreshold)
+						{
+							if (sM.printTransitions)
+								println("Hide -> Flee from not enough paying attention");
+							sM.setCurrentState("Flee");
+						}
+						//if the enemy is very, very dangerous
+						else if (threat > dangerThreshold)
+						{
+							if (sM.printTransitions)
+								println("Hide -> Flee from too dangerous");
+							sM.setCurrentState("Flee");
+						}
+					}
+					else
+					{
+						//if many of the other trolls are paying attention
+						if (numTrolls > 0 && (numTrollsSeePlayers / numTrolls > .7))
+						{
+							if (sM.printTransitions)
+								println("Hide -> Attack");
+							sM.setCurrentState("Attack");
+						}
+					}
+				}
+			}
+			public void act()
+			{
+				if (sM.getCurrentState().name.equals("Hide") && !returned && position.x == origin.x && position.y == origin.y)
+				{
+					returned = true;
+					rotation = hideAngle;
+				}
+			}
+		});
+		r.setCurrentBucket("Hide");//hide is default state
+		
+		r.add(new ResponseBucket("Attack"){
+			public void size()
+			{
+				//if almost dead
+				if (health < 4)
+				{
+					if (sM.printTransitions)
+						println("Attack -> Flee from almost dead");
+					sM.setCurrentState("Flee");
+				}
+				else if (seesPlayer)
+				{
+					if (threat > 0)//if the enemy is more powerful
+					{
+						//if not many trolls are paying attention and the enemy is very dangerous
+						if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > attentionThreshold)
+						{
+							if (sM.printTransitions)
+								println("Attack -> Hide from not enough paying attention");
+							sM.setCurrentState("Hide");
+						}
+						//if the enemy is very, very dangerous
+						else if (threat > dangerThreshold)
+						{
+							if (sM.printTransitions)
+								println("Attack -> Flee from too dangerous");
+							sM.setCurrentState("Flee");
+						}
+					}
+				}
+				else
+				{
+					if (sM.printTransitions)
+						println("Attack -> Hide from losing sight");
+					sM.setCurrentState("Hide");
+				}
+			}
+			public void act()
+			{
+				
+			}
+		});
+		
+		r.add(new ResponseBucket("Flee"){
+			public void size()
+			{
+				if (position.dist(safeSpace) < 3 && health == healthCap)
+				{
+					if (sM.printTransitions)
+						println("Flee -> Hide from full health");
+					sM.setCurrentState("Hide");
+				}
+			}
+			public void act()
+			{
+				if (position.dist(safeSpace) < 3 && health < healthCap)
+					health++;
+			}
+		});
+		
+		return r;
+	}
+	
 	Path MakePath()
 	{
 		//println("Creating Path");
@@ -475,6 +599,15 @@ class Todd extends Movable
 				}
 				break;
 			case 2:
+				switch (rC.getCurrentBucket().name)
+				{
+					case "Hide":
+						return origin;
+					case "Attack":
+						return trackedPlayer.position;
+					case "Flee":
+						return safeSpace;
+				}
 				break;
 		}
 		return position;
@@ -542,6 +675,8 @@ class Todd extends Movable
 			
 			if (variation == 1)
 				sM.getCurrentState().act();
+			else if (variation == 2)
+				rC.getCurrentState().act();
 		}
 		//rotate to player
 		if (seesPlayer)
@@ -613,6 +748,7 @@ class Todd extends Movable
 				printString = sM.getCurrentState().name;
 				break;
 			case 2:
+				printString = rC.getCurrentBucket().name;
 				break;
 		}
 		

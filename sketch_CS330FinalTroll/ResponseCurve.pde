@@ -6,6 +6,8 @@ class ResponseCurve
   ArrayList<ResponseBucket> buckets = new ArrayList<ResponseBucket>();
   ResponseBucket currentBucket;
   
+  boolean printSizes = false;
+  
   ResponseBucket add(ResponseBucket b)
   {
     buckets.add(b);
@@ -49,6 +51,7 @@ class ResponseCurve
   {
     if (i < buckets.size())
       currentBucket = get(i);
+    currentBucket.start();
     return currentBucket;
   }
   
@@ -59,6 +62,7 @@ class ResponseCurve
   
   ResponseBucket chooseBucket()//randomly chooses a bucket based on their weights
   {
+    ResponseBucket currBuck = currentBucket;
     ArrayList<Integer> bSizes = new ArrayList<Integer>();
     int sum = 0;
     for (ResponseBucket b : buckets)
@@ -70,7 +74,7 @@ class ResponseCurve
     
     float index = random(sum);
     
-    int sum = 0;
+    sum = 0;
     for (int i = 0; i < buckets.size(); i++)
     {
       ResponseBucket b = buckets.get(i);
@@ -81,6 +85,18 @@ class ResponseCurve
       }
       sum += bSizes.get(i);
     }
+    
+    if (printSizes && currBuck != currentBucket)
+      println("" + bSizes);
+    
     return currentBucket;
+  }
+  
+  public String toString()
+  {
+    ArrayList<Integer> sizes = new ArrayList<Integer>();
+    for (ResponseBucket b : buckets)
+      sizes.add(b.size());
+    return "" + getCurrentBucket().name + sizes;
   }
 }

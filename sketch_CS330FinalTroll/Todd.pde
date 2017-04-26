@@ -71,7 +71,7 @@ class Todd extends Movable
 	int numTrollsSeePlayers = 0;
 	float threat = 0;
 	int attentionThreshold = 10;
-	int dangerThreshold = 3;
+	int dangerThreshold = 5;//3;
 	
 	//animation vars (acting)
 	boolean fighting = false;
@@ -277,8 +277,8 @@ class Todd extends Movable
 					if (numTrollsCounted < 4)//max 4 because only four trolls can attack at once
 					{
 						Todd t = (Todd) o;
-						netTrollHealth -= t.health;
-						netTrollDamage -= t.weaponDamage;
+						netTrollHealth += t.health;
+						netTrollDamage += t.weaponDamage;
 						numTrollsCounted++;
 					}
 					break;
@@ -286,9 +286,9 @@ class Todd extends Movable
 		}
 		
 		float timeToKill = netPlayerHealth / netTrollDamage;
-		float timeToBeKilled = netTrollHealth / netPlayerDamage;
+		float timeToBeKilled = netTrollHealth / netPlayerDamage - 1;//-1 so they try to survive
 		
-		return timeToBeKilled - timeToKill;
+		return timeToKill - timeToBeKilled;
 	}
 	
 	StateMachine createStateMachine()//variation 1
@@ -310,6 +310,14 @@ class Todd extends Movable
 				}
 				else if (seesPlayer)
 				{
+					//if the enemy will one shot him
+					if (health <= trackedPlayer.weaponDamage)
+					{
+						if (sM.printTransitions)
+							println("Hide -> Flee from one shot");
+						sM.setCurrentState("Flee");
+					}
+					
 					if (threat > 0)//if the enemy is more powerful
 					{
 						//if not many trolls are paying attention and the enemy is very dangerous
@@ -346,7 +354,7 @@ class Todd extends Movable
 			}
 			public void act()
 			{
-				if (sM.getCurrentState().name.equals("Hide") && !returned && position.x == origin.x && position.y == origin.y)
+				if (!returned && position.x == origin.x && position.y == origin.y)
 				{
 					returned = true;
 					rotation = hideAngle;
@@ -367,6 +375,14 @@ class Todd extends Movable
 				}
 				else if (seesPlayer)
 				{
+					//if the enemy will one shot him
+					if (health <= trackedPlayer.weaponDamage)
+					{
+						if (sM.printTransitions)
+							println("Attack -> Flee from one shot");
+						sM.setCurrentState("Flee");
+					}
+					
 					if (threat > 0)//if the enemy is more powerful
 					{
 						//if not many trolls are paying attention and the enemy is very dangerous
@@ -436,49 +452,49 @@ class Todd extends Movable
 			{
 				returned = false;
 			}
-			public void size()
+			public int size()
 			{
-				//if almost dead
-				if (health < 4)
+				float weight = 0;
+				if (seesPlayer)
 				{
-					if (sM.printTransitions)
-						println("Hide -> Flee from almost dead");
-					sM.setCurrentState("Flee");
-				}
-				else if (seesPlayer)
-				{
-					if (threat > 0)//if the enemy is more powerful
+					if (threat > 0)
 					{
-						//if not many trolls are paying attention and the enemy is very dangerous
-						if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > attentionThreshold)
+						float pDist = position.dist(trackedPlayer.position);
+						if (pDist < 4)
 						{
-							if (sM.printTransitions)
-								println("Hide -> Flee from not enough paying attention");
-							sM.setCurrentState("Flee");
+							//if player is not that close or threatening, medium chance to wait
+							weight += pDist * 30 / threat;
 						}
-						//if the enemy is very, very dangerous
-						else if (threat > dangerThreshold)
+						else
 						{
-							if (sM.printTransitions)
-								println("Hide -> Flee from too dangerous");
-							sM.setCurrentState("Flee");
+							//if player is threatening but not close, high chance to wait
+							weight += 50 / threat;
 						}
 					}
 					else
 					{
-						//if many of the other trolls are paying attention
-						if (numTrolls > 0 && (numTrollsSeePlayers / numTrolls > .7))
-						{
-							if (sM.printTransitions)
-								println("Hide -> Attack");
-							sM.setCurrentState("Attack");
-						}
+						//if not many other trolls are watching, high chance to wait
+						if (numTrolls > 0)
+							weight += (1 - numTrollsSeePlayers / numTrolls) * 50 / abs(threat);
 					}
 				}
+				//if can't see player and health high, low chance to wait, high chance if at origin
+				else
+				{
+					weight += health / healthCap * 3;
+					if (position.x == origin.x && position.y == origin.y)
+						weight += health / healthCap * 60;
+					
+					//if not many are watching
+					if (numTrolls > 0)
+						weight += (1 - numTrollsSeePlayers / numTrolls) * 30;
+				}
+				
+				return (int) weight;
 			}
 			public void act()
 			{
-				if (sM.getCurrentState().name.equals("Hide") && !returned && position.x == origin.x && position.y == origin.y)
+				if (!returned && position.x == origin.x && position.y == origin.y)
 				{
 					returned = true;
 					rotation = hideAngle;
@@ -488,41 +504,23 @@ class Todd extends Movable
 		r.setCurrentBucket("Hide");//hide is default state
 		
 		r.add(new ResponseBucket("Attack"){
-			public void size()
+			public int size()
 			{
-				//if almost dead
-				if (health < 4)
+				float weight = 0;
+				if (seesPlayer)
 				{
-					if (sM.printTransitions)
-						println("Attack -> Flee from almost dead");
-					sM.setCurrentState("Flee");
-				}
-				else if (seesPlayer)
-				{
-					if (threat > 0)//if the enemy is more powerful
+					if (threat <= 0)
 					{
-						//if not many trolls are paying attention and the enemy is very dangerous
-						if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > attentionThreshold)
-						{
-							if (sM.printTransitions)
-								println("Attack -> Hide from not enough paying attention");
-							sM.setCurrentState("Hide");
-						}
-						//if the enemy is very, very dangerous
-						else if (threat > dangerThreshold)
-						{
-							if (sM.printTransitions)
-								println("Attack -> Flee from too dangerous");
-							sM.setCurrentState("Flee");
-						}
+						//if many other trolls are watching, high chance to attack
+						if (numTrolls > 0)
+							weight += numTrollsSeePlayers / numTrolls * 20 * abs(threat);
+						
+						//low chance increase the higher the net threat
+						weight += abs(threat) * 2;
 					}
 				}
-				else
-				{
-					if (sM.printTransitions)
-						println("Attack -> Hide from losing sight");
-					sM.setCurrentState("Hide");
-				}
+				
+				return (int) weight;
 			}
 			public void act()
 			{
@@ -531,14 +529,45 @@ class Todd extends Movable
 		});
 		
 		r.add(new ResponseBucket("Flee"){
-			public void size()
+			public int size()
 			{
-				if (position.dist(safeSpace) < 3 && health == healthCap)
+				float weight = 0;
+				
+				//if he is going for the healing, high chance to keep going for it
+				if (rC.getCurrentBucket().name.equals("Flee"))
+					if (position.dist(safeSpace) < 3)
+					{
+						if (health < healthCap)
+							weight += 120;
+					}
+					else if (health < healthCap)
+						weight += 150;
+				
+				if (seesPlayer)
 				{
-					if (sM.printTransitions)
-						println("Flee -> Hide from full health");
-					sM.setCurrentState("Hide");
+					//if would get one shot, go heal plox
+					if (health <= trackedPlayer.weaponDamage)
+						weight += 300;
+					
+					if (threat > 0)
+					{
+						float pDist = position.dist(trackedPlayer.position);
+						if (pDist < 4)
+						{
+							//if player is not that close or threatening, medium chance to flee
+							weight += (4 - pDist) * 30 * threat;
+						}
+						else
+						{
+							//if player is threatening but not close, low chance to flee
+							weight += 5 * threat;
+						}
+					}
 				}
+				//if can't see player and low health, high chance to flee
+				else weight += (1 - health / healthCap) * 100;
+				
+				return (int) weight;
 			}
 			public void act()
 			{
@@ -676,7 +705,7 @@ class Todd extends Movable
 			if (variation == 1)
 				sM.getCurrentState().act();
 			else if (variation == 2)
-				rC.getCurrentState().act();
+				rC.getCurrentBucket().act();
 		}
 		//rotate to player
 		if (seesPlayer)
@@ -748,11 +777,20 @@ class Todd extends Movable
 				printString = sM.getCurrentState().name;
 				break;
 			case 2:
-				printString = rC.getCurrentBucket().name;
+				printString = "" + rC;
+				//printString = rC.getCurrentBucket().name;
 				break;
 		}
 		
+		pushMatrix();
+		pushStyle();
+		
+		textAlign(CENTER);
+		
 		fill(0);
-		text(printString, (position.x + 5 / 2) * grid.gridSize - 1, (position.y + 3 / 2) * grid.gridSize - 1);
+		text(printString, (position.x /*+ 5 / 2*/) * grid.gridSize - 1, (position.y - 1 /*+ 3*/ / 2) * grid.gridSize - 1);
+		
+		popStyle();
+		popMatrix();
 	}
 }

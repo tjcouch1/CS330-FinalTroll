@@ -38,12 +38,14 @@ Pather pather = new Pather();
 Objects objects = new Objects();
 Objects decorations = new Objects();
 Objects players = new Objects();
+Objects trolls = new Objects();
 Keys keys = new Keys();
 
 Todd todd;
 Player player;
 float wDamage = 4;
-float weaponDamageCap = 7;
+float trollDamage = 5;
+float weaponDamageCap = 10;
 GridObject chest;
 
 PVector safeSpace = new PVector(19, 5);
@@ -116,6 +118,21 @@ void setup()
 			displayText = "Player Damage: " + wDamage;
 		}
 	});
+	gameMenu.add(new Button(new PVector(width - 4.5 * grid.gridSize, 3 * grid.gridSize),
+			new PVector(8 * grid.gridSize, 1.5 * grid.gridSize), "Troll Damage: " + trollDamage){
+		public void clicked()
+		{
+			trollDamage++;
+			if (trollDamage > weaponDamageCap)
+				trollDamage = 0;
+			for (Object o : trolls)
+			{
+				Todd t = (Todd) o;
+				t.weaponDamage = trollDamage;
+			}
+			displayText = "Troll Damage: " + trollDamage;
+		}
+	});
 }
 
 void StartGame(int var)
@@ -124,7 +141,7 @@ void StartGame(int var)
 	gameStart = true;
 
 	player = (Player) players.add(objects.addGrid(new Player(new PVector(22, 31))));
-	todd = (Todd) objects.addGrid(new Todd(bridge));
+	todd = (Todd) trolls.add(objects.addGrid(new Todd(bridge)));
 	
 	/*
 	objects.addGrid(new Block(new PVector(17, 10)));
@@ -200,12 +217,12 @@ void StartGame(int var)
 	
 	if (variation > 0)
 	{
-		objects.addGrid(new Todd(new PVector(6, 28)));
-		objects.addGrid(new Todd(new PVector(4, 29)));
-		objects.addGrid(new Todd(new PVector(3, 31)));
-		objects.addGrid(new Todd(new PVector(4, 33)));
-		objects.addGrid(new Todd(new PVector(6, 34)));
-		objects.addGrid(new Todd(new PVector(8, 34)));
+		trolls.add(objects.addGrid(new Todd(new PVector(6, 28))));
+		trolls.add(objects.addGrid(new Todd(new PVector(4, 29))));
+		trolls.add(objects.addGrid(new Todd(new PVector(3, 31))));
+		trolls.add(objects.addGrid(new Todd(new PVector(4, 33))));
+		trolls.add(objects.addGrid(new Todd(new PVector(6, 34))));
+		trolls.add(objects.addGrid(new Todd(new PVector(8, 34))));
 		
 		if (variation == 2)
 		{

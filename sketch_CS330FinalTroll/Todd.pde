@@ -60,6 +60,7 @@ class Todd extends Movable
 	Player trackedPlayer;
 	boolean seesPlayer = false;
 	boolean sawPlayer = false;
+	int numTrolls = 0;
 	
 	//status vars (thinking)
 	float healthCap = 100;
@@ -67,6 +68,8 @@ class Todd extends Movable
 	float weaponDamage = 5;
 	float attackRange = 1.2;
 	boolean returning = false;
+	int numTrollsSeePlayers = 0;
+	float threat = 0;
 	
 	//animation vars (acting)
 	boolean fighting = false;
@@ -82,6 +85,8 @@ class Todd extends Movable
 	
 	int pathUpdateTimeCap = 10;
 	int pathUpdateTime = pathUpdateTimeCap;
+	
+	StateMachine sM;
 	
 	Todd()
 	{
@@ -106,11 +111,17 @@ class Todd extends Movable
 
 	void InitDefault()
 	{
+		if (variation == 1)
+		 	sM = createStateMachine();
+		
 		dest = calcDestination();
 		
 		path = MakePath();
 		
 		c = color(#15538c);
+		
+		if (variation > 0)
+			rotation = getAngle(chestPos.x + 2 - position.x, chestPos.y - position.y);
 	}
 	
 	void damage(float d)
@@ -138,6 +149,7 @@ class Todd extends Movable
 		sawPlayer = seesPlayer;
 		seesPlayer = false;
 		sensedObjects.clear();
+		numTrolls = 0;
 		for (Object o : objects)
 		{
 			switch(o.getClass().getSimpleName())
@@ -163,10 +175,12 @@ class Todd extends Movable
 				case "Todd":
 					if (o != this)
 						if (position.dist(o.position) <= trollSenseRange)
+						{
 							sensedObjects.add(o);
+							numTrolls++;
+						}
 					break;
 			}
-			
 		}
 	}
 	
@@ -183,39 +197,52 @@ class Todd extends Movable
 	
 	void think()
 	{
-		if (variation == 0)//think hardcoded for variation 0
+		switch (variation)
 		{
-			if (sawPlayer && !seesPlayer)
-				returning = true;
-			if (position.x == origin.x && position.y == origin.y && !seesPlayer)
-				returning = false;
-			
-			pathUpdateTime--;
-			if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
-			{
-				switch (variation)
+			case 0://think hardcoded for variation 0
+				if (sawPlayer && !seesPlayer)
+					returning = true;
+				if (position.x == origin.x && position.y == origin.y && !seesPlayer)
+					returning = false;
+					break;
+			case 1://determine state
+				numTrollsSeePlayers = 0;
+				for (Object o : objects)
 				{
-					case 0:
-						/*if (seesPlayer)
-							path = MakePath();
-						else
-						{
-							if (sawPlayer)//path back to origin
-								path = MakePath();
-							
-							if (!path.getLooping() && position.x == origin.x && position.y == origin.y)
-								path = MakePath();
-						}*/
-						if (seesPlayer || sawPlayer || returning || (!returning && position.x == origin.x && position.y == origin.y && !path.getLooping()))
-							path = MakePath();
-						break;
-					
-					default:
-						path = MakePath();
-						break;
+					switch(o.getClass().getSimpleName())
+					{
+						case "Todd":
+							Todd t = (Todd) o;
+							if (t.seesPlayer)
+								numTrollsSeePlayers++;
+							break;
+					}
 				}
-				pathUpdateTime = pathUpdateTimeCap;
+				threat = calculateNetThreat(sensedObjects);
+				sM.getCurrentState().transition();
+				break;
+		}
+		
+		pathUpdateTime--;
+		if (pathUpdateTime <= 0 || sawPlayer != seesPlayer)
+		{
+			switch (variation)
+			{
+				case 0://hardcoded stuffs
+					if (seesPlayer || sawPlayer || returning || (!returning && position.x == origin.x && position.y == origin.y && !path.getLooping()))
+						path = MakePath();
+					break;
+				
+				case 1://think of current state
+					sM.getCurrentState().think();
+					//path = MakePath();
+					break;
+				
+				case 2:
+					path = MakePath();
+					break;
 			}
+			pathUpdateTime = pathUpdateTimeCap;
 		}
 	}
 	
@@ -229,14 +256,110 @@ class Todd extends Movable
 				if (seesPlayer)
 					return trackedPlayer.position;
 			break;
-			//case 1:
-				//return harry.position;
-				//break;
-			//case 2:
-				//return safeSpace;
-				//break;
 		}
 		return position;
+	}
+	
+	float calculateNetThreat(Objects objects)
+	{
+		float netPlayerHealth = 0;
+		float netPlayerDamage = 0;
+		float netTrollHealth = 0;
+		float netTrollDamage = 0;
+		for (Object o : objects)
+		{
+			switch(o.getClass().getSimpleName())
+			{
+				case "Player":
+					Player p = (Player) o;
+					netPlayerHealth += p.health;
+					netPlayerDamage += p.weaponDamage;
+					break;
+				case "Todd":
+					Todd t = (Todd) o;
+					netTrollHealth += t.health;
+					netTrollDamage += t.weaponDamage;
+					break;
+			}
+		}
+		
+		float timeToKill = netPlayerHealth / netTrollDamage;
+		float timeToBeKilled = netTrollHealth / netPlayerDamage;
+		
+		return timeToBeKilled - timeToKill;
+	}
+	
+	StateMachine createStateMachine()
+	{
+		StateMachine s = new StateMachine();
+		s.add(new State("Hide"){
+			public void transition()
+			{
+				if (threat > 0)//if the enemy is more powerful
+				{
+					//if not many trolls are paying attention and the enemy is very dangerous
+					if (numTrolls > 0 && (1 - numTrollsSeePlayers / numTrolls) * threat > 10)
+					{
+						println("Fleeing from not enough paying attention");
+						sM.setCurrentState("Flee");
+					}
+					//if the enemy is very, very dangerous
+					else if (threat > 20)
+					{
+						println("Fleeing from too dangerous");
+						sm.stcurrentState("Flee");
+					}
+				}
+				else
+				{
+					//if many of the other trolls are paying attention
+					if (numTrolls > 0 && (numTrollsSeePlayers / numTrolls > .7))
+						sM.setCurrentState("Attack");
+				}
+				
+			}
+			public void think()
+			{
+				
+			}
+			public void act()
+			{
+				
+			}
+		});
+		s.setCurrentState("Hide");//hide is default state
+		
+		s.add(new State("Attack"){
+			public void transition()
+			{
+				
+			}
+			public void think()
+			{
+				
+			}
+			public void act()
+			{
+				
+			}
+		});
+		
+		s.add(new State("Flee"){
+			public void transition()
+			{
+				
+			}
+			public void think()
+			{
+				
+			}
+			public void act()
+			{
+				
+			}
+		});
+		
+		return s;
 	}
 	
 	void act()
@@ -262,26 +385,34 @@ class Todd extends Movable
 				if (path.getNextMove() != GridDir.NULL)
 					rotation = getAngle(GridDir.Move(path.getNextMove()));
 			
+			Objects attacking = new Objects();//list of players attacking this
 			for (Object o : sensedObjects)
 			{
 				switch(o.getClass().getSimpleName())
 				{
 					case "Player":
 						Player p = (Player) o;
-						//get attacked
+						//get attacked by all players in range
 						if (position.dist(p.position) <= attackRange)
 						{
 							if (p.alive)
+							{
 								damage(p.weaponDamage);
+								attacking.add(p);
+							}
 						}
 						break;
 				}
 			}
 			
 			if (trackedPlayer != null)//attack tracked player
+			{
+				if (attacking.size() > 0 && !attacking.contains(trackedPlayer))//change trackedPlayer to attacking player
+					trackedPlayer = (Player) attacking.get(0);
 				if (position.dist(trackedPlayer.position) <= attackRange)
 					if (seesPlayer)
 						trackedPlayer.damage(weaponDamage);
+			}
 		}
 		//rotate to player
 		if (seesPlayer)

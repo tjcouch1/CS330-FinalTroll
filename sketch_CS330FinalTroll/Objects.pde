@@ -19,6 +19,16 @@ class Objects implements Iterable<Object>
 		return grid.add(o);
 	}
 	
+	Object get(int i)
+	{
+		return objects.get(i);
+	}
+	
+	int size()
+	{
+		return objects.size();
+	}
+	
 	//do not use with grid!!
 	void clear()
 	{

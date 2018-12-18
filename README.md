@@ -23,7 +23,7 @@ Move the player with WASD.
 
 Change the player's damage or the trolls' damage by clicking the buttons in the top right. This setting immensely affects how Todd acts in scenarios 2 and 3.
 
-Includes a small game engine for Processing I wrote for this AI. It handles objects, inputs, an optional grid system with astar pathfinding, and more.
+Includes a small game engine for Processing I wrote for this AI. It handles objects, inputs, an optional grid system with A* pathfinding, and more.
 
 Created for AI class, April 26, 2017.
 

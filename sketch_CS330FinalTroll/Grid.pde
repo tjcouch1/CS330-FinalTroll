@@ -100,10 +100,12 @@ class Grid
 		noStroke();
 		//tint(255, 100);
 		
+		/*
 		for (int i = 0; i < gridWidth; i++)
 			for (int j = 0; j < gridHeight; j++)
 				if (gridContents[i][j] != null)
 					rect(i * gridSize, j * gridSize, gridSize, gridSize);
+		*/
 		
 		fill(#00b3b2, 128);
 		rect(safeSpace.x * gridSize, safeSpace.y * gridSize, gridSize, gridSize);
@@ -112,6 +114,7 @@ class Grid
 		
 		popStyle();
 		
+		/*
 		fill(0);
 		for (int i = 0; i < grid.gridWidth; i++)
 		{
@@ -123,5 +126,6 @@ class Grid
 			int y = j * grid.gridSize;
 			line(0, y, width, y);
 		}
+		*/
 	}
 }

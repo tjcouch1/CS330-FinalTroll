@@ -29,7 +29,7 @@ Created for AI class, April 26, 2017.
 
 ![](https://github.com/tjcouch1/Enemy-Group-AI/blob/master/enemygroupai.gif)
 
-Notes on the example execution of each scenario:
+Notes on the gif of each scenario:
 
 1. The player simply has more damage output on Todd, so he has no chance of winning. Todd attacks until he dies.
 2. The player approaches the bushes and pauses. At that position, a couple of trolls have spotted the player. They know they don't have enough damage to overpower the player yet, though, so they wait patiently in the bushes. When the player gets closer and more trolls notice him, they jump out and attack the player all together. They kill the player and return to their bushes. The player did not deal enough damage to any of them to make them feel that healing is worth leaving their main goal of defending the chest.

@@ -3,6 +3,8 @@ AI that weighs party strength against player party strength using multiple metho
 
 Todd is a blue troll who guards a brown chest from the player. He hides in green bushes, and he rests to recover health at home in the transparent blue square. Generally, he should attack the player when he gets close to the chest.
 
+![](https://github.com/tjcouch1/Enemy-Group-AI/blob/master/enemygroupai.gif)
+
 Todd runs on a sense-think-act cycle. He receives information from the environment based on specified rules, thinks about the information he received in three different ways based on three scenarios, then acts based on his thoughts.
 
 Todd has a few senses:
@@ -26,8 +28,6 @@ Change the player's damage or the trolls' damage by clicking the buttons in the 
 Includes a small game engine for Processing I wrote for this AI. It handles objects, inputs, an optional grid system with A* pathfinding, and more.
 
 Created for AI class, April 26, 2017.
-
-![](https://github.com/tjcouch1/Enemy-Group-AI/blob/master/enemygroupai.gif)
 
 Notes on the gif of each scenario:
 
